@@ -9,9 +9,9 @@ logger = logging.getLogger(__name__)
 DEFAULT_WATERMARK_FILENAME = "watermark.json"
 
 
-def clean_watermark(watermark: str) -> str:
+def normalize_date(date_str: str) -> str:
     """Normalize watermark string by stripping timestamp if present."""
-    return str(watermark).split("T")[0]
+    return str(date_str).split("T")[0]
 
 
 def read_watermark(target_dir: Path, filename: str = DEFAULT_WATERMARK_FILENAME) -> str | None:
@@ -22,27 +22,29 @@ def read_watermark(target_dir: Path, filename: str = DEFAULT_WATERMARK_FILENAME)
         return None
 
     try:
-        with open(filepath, "r", encoding="utf-8") as file:
-            data: dict[str, Any] = json.load(file)
+        with open(file=filepath, mode="r", encoding="utf-8") as file:
+            data: dict[str, Any] = json.load(fp=file)
             watermark = data.get("watermark")
-            return clean_watermark(watermark) if watermark is not None else None
+            return normalize_date(date_str=watermark) if watermark is not None else None
     except (IOError, json.JSONDecodeError) as exc:
         logger.error("Error reading watermark from %s: %s", filepath, exc)
         return None
 
 
 def save_watermark(
-        target_dir: Path, 
-        watermark: str, dataset: str | None = None, 
-        temporal_resolution: str | None = None, 
-        records_count: int | None = None,
-        filename: str = DEFAULT_WATERMARK_FILENAME) -> Path | None:
+    target_dir: Path,
+    watermark: str,
+    dataset: str | None = None,
+    temporal_resolution: str | None = None,
+    records_count: int | None = None,
+    filename: str = DEFAULT_WATERMARK_FILENAME,
+) -> Path | None:
     """Save the watermark date and ingestion metadata to the target directory."""
     target_dir.mkdir(parents=True, exist_ok=True)
     filepath = target_dir / filename
 
-    cleaned = clean_watermark(watermark)
-    payload: dict[str, Any] = {"watermark": cleaned, "updated_at": datetime.now(timezone.utc).isoformat()}
+    cleaned = normalize_date(date_str=watermark)
+    payload: dict[str, Any] = {"watermark": cleaned, "updated_at": datetime.now(tz=timezone.utc).isoformat()}
     if dataset is not None:
         payload["dataset"] = dataset
     if temporal_resolution is not None:
@@ -51,8 +53,13 @@ def save_watermark(
         payload["records_count"] = records_count
 
     try:
-        with open(filepath, "w", encoding="utf-8") as file:
-            json.dump(payload, file, indent=4, ensure_ascii=False)
+        with open(file=filepath, mode="w", encoding="utf-8") as file:
+            json.dump(
+                obj=payload,
+                fp=file,
+                indent=4,
+                ensure_ascii=False,
+            )
         logger.info("Watermark successfully updated to '%s' at %s", cleaned, filepath)
         return filepath
     except IOError as exc:

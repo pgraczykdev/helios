@@ -16,13 +16,18 @@ class EmberClient:
     DEFAULT_BASE_URL = "https://api.ember-energy.org"
     DEFAULT_TIMEOUT = 60  # seconds
 
-    def __init__(self, api_key: str | None = None, base_url: str | None = None, timeout: int = DEFAULT_TIMEOUT) -> None:
+    def __init__(
+        self,
+        api_key: str | None = None,
+        base_url: str | None = None,
+        timeout: int = DEFAULT_TIMEOUT,
+    ) -> None:
         """Initialize the Ember API client."""
-        self.api_key = api_key or os.getenv("EMBER_API_KEY")
+        self.api_key = api_key or os.getenv(key="EMBER_API_KEY")
         if not self.api_key:
             raise ValueError("Missing API key! Set the EMBER_API_KEY environment variable in .env "
                             "or pass 'api_key' directly to the constructor.")
-        self.base_url = (base_url or os.getenv("EMBER_API_URL") or self.DEFAULT_BASE_URL).rstrip("/")
+        self.base_url = (base_url or os.getenv(key="EMBER_API_URL") or self.DEFAULT_BASE_URL).rstrip("/")
         self.timeout = timeout
         self.session = requests.Session()
         self.session.headers.update({
@@ -34,7 +39,12 @@ class EmberClient:
         """Support for context manager entry: with EmberClient() as client:"""
         return self
 
-    def __exit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
+    def __exit__(
+        self,
+        exc_type: Any,
+        exc_val: Any,
+        exc_tb: Any,
+    ) -> None:
         """Automatically close the session when exiting the 'with' block."""
         self.close()
 
@@ -51,7 +61,7 @@ class EmberClient:
             request_params.update(params)
 
         try:
-            response = self.session.get(url, params=request_params, timeout=self.timeout)
+            response = self.session.get(url=url, params=request_params, timeout=self.timeout)
             response.raise_for_status()
             return response.json()
         except requests.RequestException as exc:
@@ -62,21 +72,12 @@ class EmberClient:
         """Fetch the latest available date for a given dataset and temporal resolution."""
         endpoint = f"/v1/options/{dataset}/{temporal_resolution}/date"
         try:
-            payload = self._get(endpoint)
+            payload = self._get(endpoint=endpoint)
             date_options = payload.get("options", [])
             if not date_options:
                 return None
             latest = max(date_options)
             return str(latest)
         except requests.RequestException:
-            return None
-
-    def get_electricity_generation(
-        self,
-        temporal_resolution: str = "yearly",
-        params: dict[str, Any] | None = None,
-    ) -> list[dict[str, Any]]:
-        """Fetch electricity generation data for the given temporal resolution."""
-        endpoint = f"/v1/electricity-generation/{temporal_resolution}"
-        payload = self._get(endpoint, params=params)
-        return payload.get("data", [])
+            logger.error("Failed to fetch latest available date for dataset %s with temporal resolution %s", dataset, temporal_resolution)
+            raise RuntimeError(f"Failed to fetch latest available date for dataset {dataset} with temporal resolution {temporal_resolution}")
