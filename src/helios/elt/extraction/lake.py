@@ -4,6 +4,8 @@ import logging
 from pathlib import Path
 from typing import Any, Protocol
 
+from helios.elt.extraction.extraction_utils import normalize_dataset_prefix
+
 
 logger = logging.getLogger(__name__)
 
@@ -35,7 +37,7 @@ class JsonBronzeDataLake:
 
     def get_dataset_prefix(self, dataset: str, temporal_resolution: str) -> str:
         """Resolve the target directory path for a given dataset and temporal resolution."""
-        normalized_dataset = dataset.replace("-", "_")
+        normalized_dataset = normalize_dataset_prefix(dataset)
         return (self.base_dir / normalized_dataset / temporal_resolution).as_posix()
 
     def save_raw_data(

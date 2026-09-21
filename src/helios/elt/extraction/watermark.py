@@ -25,7 +25,7 @@ class WatermarkManager(Protocol):
 
 class JsonWatermarkManager:
     """Manager for handling watermarks stored as JSON files in a local directory."""
-    _default_watermark_dir = Path("data/watermarks")
+    _default_watermark_dir = "data/watermarks"
     _default_watermark_filename = "watermark.json"
 
     def __init__(self, base_dir: Path | str = _default_watermark_dir):
