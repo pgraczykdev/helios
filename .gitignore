@@ -74,7 +74,7 @@ Desktop.ini
 
 # Scratch & Raw data
 scratch/
-data/raw/*
+data/*
 !data/raw/.gitkeep
 
 # AI config files .md

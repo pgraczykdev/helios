@@ -1,19 +1,19 @@
 from dataclasses import dataclass
 from datetime import datetime, timezone
-from enum import Enum, StrEnum
+from enum import StrEnum
 from pathlib import Path
 from typing import Any
 from dotenv import load_dotenv
 from helios.client.ember_client import EmberClient
 from helios.elt.extraction.lake import BronzeDataLake, JsonBronzeDataLake
-from helios.elt.extraction.watermark import read_watermark, save_watermark, normalize_date
+from helios.elt.extraction.watermark import WatermarkManager, JsonWatermarkManager
+from helios.elt.extraction.extraction_utils import normalize_date
 
 import logging
 
 load_dotenv()
 
 logger = logging.getLogger(__name__)
-
 
 class Dataset(StrEnum):
     """Supported datasets for extraction."""
@@ -22,7 +22,6 @@ class Dataset(StrEnum):
     POWER_SECTOR_EMISSIONS = "power-sector-emissions"
     ELECTRICITY_GENERATION = "electricity-generation" 
     INSTALLED_CAPACITY = "installed-capacity"
-
 
 
 class TemporalResolution(StrEnum):
@@ -53,13 +52,16 @@ class ExtractionResult:
     error_message: str | None = None
 
 
-class ExtractionPipeline:
+class PipelineExtractor:
     """Orchestrates watermark-aware data extraction from Ember API into Bronze Lake."""
-
-    def __init__(self, client: EmberClient | None = None, lake: BronzeDataLake | None = None) -> None:
+    def __init__(self, 
+                 client: EmberClient | None = None, 
+                 lake: BronzeDataLake | None = None,
+                 watermark_manager: WatermarkManager | None = None) -> None:
         """Initialize the extraction pipeline with optional client and lake dependencies."""
         self.client = client or EmberClient()
         self.lake = lake or JsonBronzeDataLake()
+        self.watermark_manager = watermark_manager or JsonWatermarkManager()
 
     def _extract_single(
         self,
@@ -93,7 +95,6 @@ class ExtractionPipeline:
     ) -> ExtractionResult:
         """Fetch data in yearly batches to prevent API server timeouts."""
         default_start_date = "2000-01-01"
-        partition_dir = self.lake.get_dataset_dir(dataset=dataset, temporal_resolution=temporal_resolution)
         start_date = prev_watermark or default_start_date
         end_date = latest_available or datetime.now(tz=timezone.utc).strftime("%Y-%m-%d")
 
@@ -120,8 +121,7 @@ class ExtractionPipeline:
                     if extracted_dates:
                         batch_max = max(extracted_dates)
                         current_watermark = max(current_watermark, batch_max) if current_watermark else batch_max
-                        save_watermark(
-                            target_dir=partition_dir,
+                        self.watermark_manager.set(
                             watermark=current_watermark,
                             dataset=dataset,
                             temporal_resolution=temporal_resolution,
@@ -144,8 +144,7 @@ class ExtractionPipeline:
             
         if latest_available and total_records > 0:
             current_watermark = latest_available
-            save_watermark(
-                target_dir=partition_dir,
+            self.watermark_manager.set(
                 watermark=current_watermark,
                 dataset=dataset,
                 temporal_resolution=temporal_resolution,
@@ -172,14 +171,10 @@ class ExtractionPipeline:
     ) -> ExtractionResult:
         prev_watermark: str | None = None
         try:
-            partition_dir = self.lake.get_dataset_dir(dataset=dataset, temporal_resolution=temporal_resolution)
-            prev_watermark = read_watermark(target_dir=partition_dir)
+            prev_watermark = self.watermark_manager.get(dataset=dataset, temporal_resolution=temporal_resolution)
             logger.info(f"Starting extraction for '{dataset}/{temporal_resolution}'. Current watermark: {prev_watermark}")
 
-            latest_available_date_raw = self.client.get_latest_available_date(
-                dataset=dataset,
-                temporal_resolution=temporal_resolution,
-            )
+            latest_available_date_raw = self.client.get_latest_available_date(dataset=dataset, temporal_resolution=temporal_resolution)
             latest_available = normalize_date(date_str=latest_available_date_raw) if latest_available_date_raw else None
             logger.info("Latest date reported by Ember API: %s", latest_available)
 

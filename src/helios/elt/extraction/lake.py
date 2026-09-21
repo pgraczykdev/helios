@@ -4,12 +4,14 @@ import logging
 from pathlib import Path
 from typing import Any, Protocol
 
+
 logger = logging.getLogger(__name__)
 
 # Default base directory for raw Bronze Data Lake storage
 
 class BronzeDataLake(Protocol):
-    def get_dataset_dir(self, dataset: str, temporal_resolution: str) -> Path:
+    def get_dataset_prefix(self, dataset: str, temporal_resolution: str) -> str:
+        """Return the prefix path for the dataset and temporal resolution within the Bronze Lake."""
         ...
 
     def save_raw_data(
@@ -19,21 +21,22 @@ class BronzeDataLake(Protocol):
         temporal_resolution: str,
         filename: str | None = None,
         tag: str | None = None,
-    ) -> Path | None:
+    ) -> str | None:
+        """Save raw data to the Bronze Lake and return the file path as a string."""
         ...
+
 
 class JsonBronzeDataLake:
     """Manager for the local Bronze Data Lake storing raw 1:1 API payloads in JSON files."""
-    _DEFAULT_BRONZE_DIR = Path("data/raw")
-
-    def __init__(self, base_dir: Path | str = _DEFAULT_BRONZE_DIR) -> None:
+    _default_json_bronze_lake_dir = Path("data/raw")
+    def __init__(self, base_dir: Path | str = _default_json_bronze_lake_dir) -> None:
         """Initialize Bronze Lake with root raw storage directory."""
         self.base_dir = Path(base_dir)
 
-    def get_dataset_dir(self, dataset: str, temporal_resolution: str) -> Path:
+    def get_dataset_prefix(self, dataset: str, temporal_resolution: str) -> str:
         """Resolve the target directory path for a given dataset and temporal resolution."""
         normalized_dataset = dataset.replace("-", "_")
-        return self.base_dir / normalized_dataset / temporal_resolution
+        return (self.base_dir / normalized_dataset / temporal_resolution).as_posix()
 
     def save_raw_data(
         self,
@@ -42,9 +45,9 @@ class JsonBronzeDataLake:
         temporal_resolution: str,
         filename: str | None = None,
         tag: str | None = None,
-    ) -> Path | None:
+    ) -> str | None:
         """Save raw JSON payload directly to the Bronze Lake."""
-        target_dir = self.get_dataset_dir(dataset=dataset, temporal_resolution=temporal_resolution)
+        target_dir = Path(self.get_dataset_prefix(dataset=dataset, temporal_resolution=temporal_resolution))
         target_dir.mkdir(parents=True, exist_ok=True)
 
         if not filename:
@@ -65,7 +68,7 @@ class JsonBronzeDataLake:
                     ensure_ascii=False,
                 )
             logger.info("Successfully saved %d raw records to Bronze Lake at: %s", record_count, filepath)
-            return filepath
+            return filepath.as_posix()
         except IOError as exc:
             logger.error("Failed to save raw data to %s: %s", filepath, exc)
             return None
