@@ -37,8 +37,8 @@ class OracleDatabaseConnector:
         max_connections: int = 4,
         increment: int = 1,
     ) -> None:
-        self.user = user or os.getenv("ORACLE_USER")
-        self.password = password or os.getenv("ORACLE_PASSWORD")
+        self.user = user or os.getenv("ORACLE_ADMIN_USER")
+        self.password = password or os.getenv("ORACLE_ADMIN_PASSWORD")
         self.dsn = dsn or os.getenv("ORACLE_DSN")
         self.wallet_dir = wallet_dir or os.getenv("ORACLE_WALLET_DIR")
         self.wallet_password = wallet_password or os.getenv("ORACLE_WALLET_PASSWORD")
