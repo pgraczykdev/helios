@@ -29,8 +29,14 @@ class LoadingResult:
 @runtime_checkable
 class Loader(Protocol):
 
-    def load(self, data):
-        "Load the given data into the target system."
+    def load(
+        self,
+        data: list[dict[str, Any]],
+        dataset: Dataset,
+        temporal_resolution: TemporalResolution,
+        source_file: str,
+    ) -> LoadingResult:
+        """Load the given data into the target system."""
         ...
 
 class StagingLoader(Loader):

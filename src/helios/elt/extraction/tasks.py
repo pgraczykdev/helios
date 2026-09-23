@@ -5,18 +5,18 @@ from helios.elt.extraction.watermark import WatermarkManager
 
 
 def extract_electricity_generation(
-        temporal_resolution: TemporalResolution | str = TemporalResolution.YEARLY,
-        force: bool = False,
-        lake: BronzeDataLake | None = None,
-        watermark_manager: WatermarkManager | None = None,
-    ) -> ExtractionResult:
-        """Extract electricity generation dataset into Bronze Lake."""
-        pipeline = PipelineExtractor(lake=lake, watermark_manager=watermark_manager)
-        return pipeline.run(
-            dataset=Dataset.ELECTRICITY_GENERATION,
-            temporal_resolution=temporal_resolution,
-            force=force,
-        )
+    temporal_resolution: TemporalResolution | str = TemporalResolution.YEARLY,
+    force: bool = False,
+    lake: BronzeDataLake | None = None,
+    watermark_manager: WatermarkManager | None = None,
+) -> ExtractionResult:
+    """Extract electricity generation dataset into Bronze Lake."""
+    pipeline = PipelineExtractor(lake=lake, watermark_manager=watermark_manager)
+    return pipeline.run(
+        dataset=Dataset.ELECTRICITY_GENERATION,
+        temporal_resolution=temporal_resolution,
+        force=force,
+    )
     
     
 def extract_carbon_intensity(
