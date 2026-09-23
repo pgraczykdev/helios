@@ -83,8 +83,8 @@ if __name__ == "__main__":
         level=logging.INFO,
         format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
     )
-    res = extract_power_sector_emissions(
-        temporal_resolution=TemporalResolution.MONTHLY,
+    res = extract_carbon_intensity(
+        temporal_resolution=TemporalResolution.YEARLY,
         lake=None,
         watermark_manager=None
     )
