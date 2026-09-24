@@ -15,20 +15,10 @@ class BaseLoadingMapper(ABC):
         """Get the target staging table name."""
         return self._target_table
 
-    @target_table.setter
-    def target_table(self, value: str) -> None:
-        """Set the target staging table name."""
-        self._target_table = value
-
     @property
     def insert_sql(self) -> str:
         """Get the INSERT SQL query."""
         return self._insert_sql
-
-    @insert_sql.setter
-    def insert_sql(self, value: str) -> None:
-        """Set the INSERT SQL query."""
-        self._insert_sql = value
 
     @staticmethod
     def _bool_to_int(val: bool | None) -> int | None:
