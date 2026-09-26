@@ -1,4 +1,17 @@
 -- ----------------------------------------------------------------------------
+-- 0. LOGGING INFRASTRUCTURE (OraOpenSource Logger)
+-- ----------------------------------------------------------------------------
+CREATE USER helios_logger IDENTIFIED BY "<YOUR_SECURE_PASSWORD_HERE>";
+
+ALTER USER helios_logger DEFAULT TABLESPACE data QUOTA UNLIMITED ON data;
+
+GRANT CREATE SESSION TO helios_logger;
+GRANT DWROLE TO helios_logger;
+GRANT CREATE TABLE, CREATE VIEW, CREATE PROCEDURE, CREATE SEQUENCE, CREATE TRIGGER, CREATE JOB TO helios_logger;
+GRANT CREATE ANY CONTEXT TO helios_logger;
+
+
+-- ----------------------------------------------------------------------------
 -- 1. STAGING LAYER (Ingestion / Python Loader)
 -- ----------------------------------------------------------------------------
 -- Replace the placeholder password with your secure password.

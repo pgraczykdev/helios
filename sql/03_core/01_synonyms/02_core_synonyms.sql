@@ -1,0 +1,1 @@
+CREATE OR REPLACE SYNONYM logger FOR helios_logger.logger;
