@@ -5,7 +5,7 @@ from helios.elt.extraction.pipeline import Dataset
 from dataclasses import dataclass
 
 from helios.db.connector import DatabaseConnector
-from helios.elt.loading.mapper import LoadingMapperFactory
+from helios.elt.load.mapper import LoadingMapperFactory
 
 
 class LoadStatus(StrEnum):

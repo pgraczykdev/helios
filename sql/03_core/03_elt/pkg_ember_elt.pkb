@@ -1,9 +1,9 @@
-CREATE OR REPLACE PACKAGE BODY helios_core.pkg_ember_etl AS
+CREATE OR REPLACE PACKAGE BODY helios_core.pkg_ember_elt AS
     -- ========================================================================
     -- HELIOS DATA PLATFORM - CORE DWH LAYER
-    -- Package Body: helios_core.pkg_ember_etl
+    -- Package Body: helios_core.pkg_ember_elt
     -- Description: Implementation of Star Schema dimensions merge, fact loads,
-    --              and master ETL orchestration.
+    --              and master elt orchestration.
     -- Standards: Explicit CHAR semantics, anchored types, uppercase keywords,
     --            lowercase identifiers, functional result record contract.
     --            Enterprise Logger instrumentation with scope prefix and params.
@@ -12,7 +12,6 @@ CREATE OR REPLACE PACKAGE BODY helios_core.pkg_ember_etl AS
 
     -- Package-level scope prefix for OraOpenSource Logger instrumentation
     gc_scope_prefix CONSTANT VARCHAR2(31 CHAR) := LOWER($$PLSQL_UNIT) || '.';
-
 
     -- ------------------------------------------------------------------------
     -- 0. FUNCTION f_get_new_stg_count
@@ -83,15 +82,15 @@ CREATE OR REPLACE PACKAGE BODY helios_core.pkg_ember_etl AS
      *
      * @param  pi_commit Controls transaction autonomy: TRUE issues COMMIT on success,
      *                   FALSE keeps transaction uncommitted for parent orchestrator.
-     * @return Structured record (t_etl_result_rec) containing status, merged row count,
+     * @return Structured record (t_elt_result_rec) containing status, merged row count,
      *         and execution timings.
      */
     FUNCTION f_merge_dimensions(
         pi_commit IN BOOLEAN DEFAULT TRUE
-    ) RETURN t_etl_result_rec IS
+    ) RETURN t_elt_result_rec IS
         lc_scope   CONSTANT VARCHAR2(100 CHAR) := gc_scope_prefix || 'f_merge_dimensions';
         l_params   logger.tab_param;
-        l_result   t_etl_result_rec;
+        l_result   t_elt_result_rec;
         l_start_ts TIMESTAMP := SYSTIMESTAMP;
         l_merged   NUMBER := 0;
     BEGIN
@@ -299,15 +298,15 @@ CREATE OR REPLACE PACKAGE BODY helios_core.pkg_ember_etl AS
      *
      * @param  pi_commit Controls transaction autonomy: TRUE issues COMMIT on success,
      *                   FALSE keeps transaction uncommitted for parent orchestrator.
-     * @return Structured record (t_etl_result_rec) containing status, processed/merged counts,
+     * @return Structured record (t_elt_result_rec) containing status, processed/merged counts,
      *         and error details if any.
      */
     FUNCTION f_load_generation(
         pi_commit IN BOOLEAN DEFAULT TRUE
-    ) RETURN t_etl_result_rec IS
+    ) RETURN t_elt_result_rec IS
         lc_scope    CONSTANT VARCHAR2(100 CHAR) := gc_scope_prefix || 'f_load_generation';
         l_params    logger.tab_param;
-        l_result    t_etl_result_rec;
+        l_result    t_elt_result_rec;
         l_start_ts  TIMESTAMP := SYSTIMESTAMP;
         l_processed NUMBER := 0;
         l_merged    NUMBER := 0;
@@ -441,15 +440,15 @@ CREATE OR REPLACE PACKAGE BODY helios_core.pkg_ember_etl AS
      *
      * @param  pi_commit Controls transaction autonomy: TRUE issues COMMIT on success,
      *                   FALSE keeps transaction uncommitted for parent orchestrator.
-     * @return Structured record (t_etl_result_rec) containing status, processed/merged counts,
+     * @return Structured record (t_elt_result_rec) containing status, processed/merged counts,
      *         and error details if any.
      */
     FUNCTION f_load_capacity(
         pi_commit IN BOOLEAN DEFAULT TRUE
-    ) RETURN t_etl_result_rec IS
+    ) RETURN t_elt_result_rec IS
         lc_scope    CONSTANT VARCHAR2(100 CHAR) := gc_scope_prefix || 'f_load_capacity';
         l_params    logger.tab_param;
-        l_result    t_etl_result_rec;
+        l_result    t_elt_result_rec;
         l_start_ts  TIMESTAMP := SYSTIMESTAMP;
         l_processed NUMBER := 0;
         l_merged    NUMBER := 0;
@@ -583,15 +582,15 @@ CREATE OR REPLACE PACKAGE BODY helios_core.pkg_ember_etl AS
      *
      * @param  pi_commit Controls transaction autonomy: TRUE issues COMMIT on success,
      *                   FALSE keeps transaction uncommitted for parent orchestrator.
-     * @return Structured record (t_etl_result_rec) containing status, processed/merged counts,
+     * @return Structured record (t_elt_result_rec) containing status, processed/merged counts,
      *         and error details if any.
      */
     FUNCTION f_load_carbon_intensity(
         pi_commit IN BOOLEAN DEFAULT TRUE
-    ) RETURN t_etl_result_rec IS
+    ) RETURN t_elt_result_rec IS
         lc_scope    CONSTANT VARCHAR2(100 CHAR) := gc_scope_prefix || 'f_load_carbon_intensity';
         l_params    logger.tab_param;
-        l_result    t_etl_result_rec;
+        l_result    t_elt_result_rec;
         l_start_ts  TIMESTAMP := SYSTIMESTAMP;
         l_processed NUMBER := 0;
         l_merged    NUMBER := 0;
@@ -716,15 +715,15 @@ CREATE OR REPLACE PACKAGE BODY helios_core.pkg_ember_etl AS
      *
      * @param  pi_commit Controls transaction autonomy: TRUE issues COMMIT on success,
      *                   FALSE keeps transaction uncommitted for parent orchestrator.
-     * @return Structured record (t_etl_result_rec) containing status, processed/merged counts,
+     * @return Structured record (t_elt_result_rec) containing status, processed/merged counts,
      *         and error details if any.
      */
     FUNCTION f_load_demand(
         pi_commit IN BOOLEAN DEFAULT TRUE
-    ) RETURN t_etl_result_rec IS
+    ) RETURN t_elt_result_rec IS
         lc_scope    CONSTANT VARCHAR2(100 CHAR) := gc_scope_prefix || 'f_load_demand';
         l_params    logger.tab_param;
-        l_result    t_etl_result_rec;
+        l_result    t_elt_result_rec;
         l_start_ts  TIMESTAMP := SYSTIMESTAMP;
         l_processed NUMBER := 0;
         l_merged    NUMBER := 0;
@@ -853,15 +852,15 @@ CREATE OR REPLACE PACKAGE BODY helios_core.pkg_ember_etl AS
      *
      * @param  pi_commit Controls transaction autonomy: TRUE issues COMMIT on success,
      *                   FALSE keeps transaction uncommitted for parent orchestrator.
-     * @return Structured record (t_etl_result_rec) containing status, processed/merged counts,
+     * @return Structured record (t_elt_result_rec) containing status, processed/merged counts,
      *         and error details if any.
      */
     FUNCTION f_load_emissions(
         pi_commit IN BOOLEAN DEFAULT TRUE
-    ) RETURN t_etl_result_rec IS
+    ) RETURN t_elt_result_rec IS
         lc_scope    CONSTANT VARCHAR2(100 CHAR) := gc_scope_prefix || 'f_load_emissions';
         l_params    logger.tab_param;
-        l_result    t_etl_result_rec;
+        l_result    t_elt_result_rec;
         l_start_ts  TIMESTAMP := SYSTIMESTAMP;
         l_processed NUMBER := 0;
         l_merged    NUMBER := 0;
@@ -989,21 +988,21 @@ CREATE OR REPLACE PACKAGE BODY helios_core.pkg_ember_etl AS
     -- 7. FUNCTION f_load_all (Master Orchestrator)
     -- ------------------------------------------------------------------------
     /**
-     * Master ETL orchestrator function. Executes dimension merge followed by all fact
+     * Master elt orchestrator function. Executes dimension merge followed by all fact
      * table loads in sequential dependency order within a single transaction boundary.
      *
      * @param  pi_commit Controls transaction autonomy: TRUE issues atomic COMMIT at completion
      *                   or ROLLBACK on failure; FALSE leaves transaction management to caller.
-     * @return Aggregated result record (t_etl_result_rec) with total processed/merged rows,
+     * @return Aggregated result record (t_elt_result_rec) with total processed/merged rows,
      *         overall elapsed time, and error summary.
      */
     FUNCTION f_load_all(
         pi_commit IN BOOLEAN DEFAULT TRUE
-    ) RETURN t_etl_result_rec IS
+    ) RETURN t_elt_result_rec IS
         lc_scope     CONSTANT VARCHAR2(100 CHAR) := gc_scope_prefix || 'f_load_all';
         l_params     logger.tab_param;
-        l_result     t_etl_result_rec;
-        l_step_res   t_etl_result_rec;
+        l_result     t_elt_result_rec;
+        l_step_res   t_elt_result_rec;
         l_start_ts   TIMESTAMP := SYSTIMESTAMP;
         l_total_proc NUMBER := 0;
         l_total_mrg  NUMBER := 0;
@@ -1017,7 +1016,7 @@ CREATE OR REPLACE PACKAGE BODY helios_core.pkg_ember_etl AS
         l_result.error_message := NULL;
 
         -- Step 7.1: Merge Dimensions
-        l_step_res := f_merge_dimensions(pi_commit => FALSE);
+        l_step_res := f_merge_dimensions(pi_commit => pi_commit);
         IF l_step_res.status = pkg_constants.gc_res_error THEN
             logger.time_stop(p_unit => lc_scope, p_scope => lc_scope);
             logger.log_error(p_text => 'Dimensions merge failed: ' || l_step_res.error_message, p_scope => lc_scope);
@@ -1031,7 +1030,7 @@ CREATE OR REPLACE PACKAGE BODY helios_core.pkg_ember_etl AS
         l_total_mrg := l_total_mrg + l_step_res.rows_merged;
 
         -- Step 7.2: Load Generation Facts
-        l_step_res := f_load_generation(pi_commit => FALSE);
+        l_step_res := f_load_generation(pi_commit => pi_commit);
         IF l_step_res.status = pkg_constants.gc_res_error THEN
             logger.time_stop(p_unit => lc_scope, p_scope => lc_scope);
             logger.log_error(p_text => 'Generation load failed: ' || l_step_res.error_message, p_scope => lc_scope);
@@ -1046,7 +1045,7 @@ CREATE OR REPLACE PACKAGE BODY helios_core.pkg_ember_etl AS
         l_total_mrg  := l_total_mrg + l_step_res.rows_merged;
 
         -- Step 7.3: Load Capacity Facts
-        l_step_res := f_load_capacity(pi_commit => FALSE);
+        l_step_res := f_load_capacity(pi_commit => pi_commit);
         IF l_step_res.status = pkg_constants.gc_res_error THEN
             logger.time_stop(p_unit => lc_scope, p_scope => lc_scope);
             logger.log_error(p_text => 'Capacity load failed: ' || l_step_res.error_message, p_scope => lc_scope);
@@ -1061,7 +1060,7 @@ CREATE OR REPLACE PACKAGE BODY helios_core.pkg_ember_etl AS
         l_total_mrg  := l_total_mrg + l_step_res.rows_merged;
 
         -- Step 7.4: Load Carbon Intensity Facts
-        l_step_res := f_load_carbon_intensity(pi_commit => FALSE);
+        l_step_res := f_load_carbon_intensity(pi_commit => pi_commit);
         IF l_step_res.status = pkg_constants.gc_res_error THEN
             logger.time_stop(p_unit => lc_scope, p_scope => lc_scope);
             logger.log_error(p_text => 'Carbon intensity load failed: ' || l_step_res.error_message, p_scope => lc_scope);
@@ -1076,7 +1075,7 @@ CREATE OR REPLACE PACKAGE BODY helios_core.pkg_ember_etl AS
         l_total_mrg  := l_total_mrg + l_step_res.rows_merged;
 
         -- Step 7.5: Load Demand Facts
-        l_step_res := f_load_demand(pi_commit => FALSE);
+        l_step_res := f_load_demand(pi_commit => pi_commit);
         IF l_step_res.status = pkg_constants.gc_res_error THEN
             logger.time_stop(p_unit => lc_scope, p_scope => lc_scope);
             logger.log_error(p_text => 'Demand load failed: ' || l_step_res.error_message, p_scope => lc_scope);
@@ -1091,7 +1090,7 @@ CREATE OR REPLACE PACKAGE BODY helios_core.pkg_ember_etl AS
         l_total_mrg  := l_total_mrg + l_step_res.rows_merged;
 
         -- Step 7.6: Load Emissions Facts
-        l_step_res := f_load_emissions(pi_commit => FALSE);
+        l_step_res := f_load_emissions(pi_commit => pi_commit);
         IF l_step_res.status = pkg_constants.gc_res_error THEN
             logger.time_stop(p_unit => lc_scope, p_scope => lc_scope);
             logger.log_error(p_text => 'Emissions load failed: ' || l_step_res.error_message, p_scope => lc_scope);
@@ -1117,7 +1116,7 @@ CREATE OR REPLACE PACKAGE BODY helios_core.pkg_ember_etl AS
         l_result.execution_seconds := ROUND(EXTRACT(SECOND FROM (l_result.end_ts - l_start_ts)), 2);
 
         logger.log_info(
-            p_text  => 'Master ETL orchestration completed. Total processed: ' || l_total_proc || ', Total merged: ' || l_total_mrg,
+            p_text  => 'Master elt orchestration completed. Total processed: ' || l_total_proc || ', Total merged: ' || l_total_mrg,
             p_scope => lc_scope
         );
         logger.log(p_text => 'END', p_scope => lc_scope);
@@ -1132,7 +1131,7 @@ CREATE OR REPLACE PACKAGE BODY helios_core.pkg_ember_etl AS
 
             logger.time_stop(p_unit => lc_scope, p_scope => lc_scope);
             logger.log_error(
-                p_text   => 'Master ETL orchestration aborted due to unhandled error',
+                p_text   => 'Master elt orchestration aborted due to unhandled error',
                 p_scope  => lc_scope,
                 p_params => l_params
             );
@@ -1142,7 +1141,7 @@ CREATE OR REPLACE PACKAGE BODY helios_core.pkg_ember_etl AS
             l_result.rows_merged       := l_total_mrg;
             l_result.end_ts            := SYSTIMESTAMP;
             l_result.execution_seconds := ROUND(EXTRACT(SECOND FROM (l_result.end_ts - l_start_ts)), 2);
-            l_result.error_message     := 'Master ETL orchestration failed';
+            l_result.error_message     := 'Master elt orchestration failed';
             RETURN l_result;
     END f_load_all;
 
@@ -1161,7 +1160,7 @@ CREATE OR REPLACE PACKAGE BODY helios_core.pkg_ember_etl AS
     ) IS
         lc_scope CONSTANT VARCHAR2(100 CHAR) := gc_scope_prefix || 'p_load_all';
         l_params logger.tab_param;
-        l_result t_etl_result_rec;
+        l_result t_elt_result_rec;
     BEGIN
         logger.append_param(p_params => l_params, p_name => 'pi_commit', p_val => pi_commit);
         logger.log(p_text => 'START', p_scope => lc_scope, p_params => l_params);
@@ -1170,13 +1169,13 @@ CREATE OR REPLACE PACKAGE BODY helios_core.pkg_ember_etl AS
 
         IF l_result.status = pkg_constants.gc_res_error THEN
             logger.log_error(
-                p_text   => 'Master ETL finished with errors: ' || l_result.error_message,
+                p_text   => 'Master elt finished with errors: ' || l_result.error_message,
                 p_scope  => lc_scope,
                 p_params => l_params
             );
         ELSE
             logger.log_info(
-                p_text  => 'Master ETL finished successfully. Processed: ' || l_result.rows_processed || ', Merged: ' || l_result.rows_merged,
+                p_text  => 'Master elt finished successfully. Processed: ' || l_result.rows_processed || ', Merged: ' || l_result.rows_merged,
                 p_scope => lc_scope
             );
         END IF;
@@ -1193,5 +1192,5 @@ CREATE OR REPLACE PACKAGE BODY helios_core.pkg_ember_etl AS
             RAISE;
     END p_load_all;
 
-END pkg_ember_etl;
+END pkg_ember_elt;
 /

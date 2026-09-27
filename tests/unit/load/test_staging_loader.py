@@ -3,8 +3,8 @@ import pytest
 
 from helios.db import DatabaseConnector
 from helios.elt.extraction.pipeline import Dataset, TemporalResolution
-from helios.elt.loading import StagingLoader, LoadStatus
-from helios.elt.loading.mapper import LoadingMapperFactory, GenerationMapper
+from helios.elt.load import StagingLoader, LoadStatus
+from helios.elt.load.mapper import LoadingMapperFactory
 
 
 @pytest.fixture
