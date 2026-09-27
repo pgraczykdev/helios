@@ -1,8 +1,8 @@
-CREATE OR REPLACE PACKAGE helios_core.pkg_ember_etl AS
+CREATE OR REPLACE PACKAGE helios_core.pkg_ember_elt AS
     -- ========================================================================
     -- HELIOS DATA PLATFORM - CORE DWH LAYER
-    -- Package: helios_core.pkg_ember_etl (Specification)
-    -- Description: Core ETL transformation package. Loads staging data into
+    -- Package: helios_core.pkg_ember_elt (Specification)
+    -- Description: Core elt transformation package. Loads staging data into
     --              the Star Schema dimensions and facts with idempotent MERGE.
     -- Standards: Explicit CHAR semantics, anchored types, uppercase keywords,
     --            lowercase identifiers, functional result record contract.
@@ -10,7 +10,6 @@ CREATE OR REPLACE PACKAGE helios_core.pkg_ember_etl AS
     -- ========================================================================
 
     -- Global Package Constants
-    gc_pkg_name        CONSTANT VARCHAR2(30 CHAR) := 'pkg_ember_etl';
 
     -- Status and Outcome Aliases (Inherited from PKG_CONSTANTS SSOT)
     gc_status_new      CONSTANT VARCHAR2(20 CHAR) := pkg_constants.gc_status_new;
@@ -31,8 +30,8 @@ CREATE OR REPLACE PACKAGE helios_core.pkg_ember_etl AS
     SUBTYPE t_error_message       IS helios_stg.stg_ember_generation.error_message%TYPE;
     SUBTYPE t_source_file         IS helios_core.fact_generation.source_file%TYPE;
 
-    -- Result Record Type for Functional ETL Feedback
-    TYPE t_etl_result_rec IS RECORD (
+    -- Result Record Type for Functional elt Feedback
+    TYPE t_elt_result_rec IS RECORD (
         status            VARCHAR2(20 CHAR),
         rows_processed    NUMBER,
         rows_merged       NUMBER,
@@ -59,12 +58,12 @@ CREATE OR REPLACE PACKAGE helios_core.pkg_ember_etl AS
      *
      * @param  pi_commit Controls transaction autonomy: TRUE issues COMMIT on success,
      *                   FALSE keeps transaction uncommitted for parent orchestrator.
-     * @return Structured record (t_etl_result_rec) containing status, merged row count,
+     * @return Structured record (t_elt_result_rec) containing status, merged row count,
      *         and execution timings.
      */
     FUNCTION f_merge_dimensions(
         pi_commit IN BOOLEAN DEFAULT TRUE
-    ) RETURN t_etl_result_rec;
+    ) RETURN t_elt_result_rec;
 
     /**
      * Transforms and loads electricity generation data from STG_EMBER_GENERATION
@@ -73,12 +72,12 @@ CREATE OR REPLACE PACKAGE helios_core.pkg_ember_etl AS
      *
      * @param  pi_commit Controls transaction autonomy: TRUE issues COMMIT on success,
      *                   FALSE keeps transaction uncommitted for parent orchestrator.
-     * @return Structured record (t_etl_result_rec) containing status, processed/merged counts,
+     * @return Structured record (t_elt_result_rec) containing status, processed/merged counts,
      *         and error details if any.
      */
     FUNCTION f_load_generation(
         pi_commit IN BOOLEAN DEFAULT TRUE
-    ) RETURN t_etl_result_rec;
+    ) RETURN t_elt_result_rec;
 
     /**
      * Transforms and loads installed renewable capacity data from STG_EMBER_CAPACITY
@@ -87,12 +86,12 @@ CREATE OR REPLACE PACKAGE helios_core.pkg_ember_etl AS
      *
      * @param  pi_commit Controls transaction autonomy: TRUE issues COMMIT on success,
      *                   FALSE keeps transaction uncommitted for parent orchestrator.
-     * @return Structured record (t_etl_result_rec) containing status, processed/merged counts,
+     * @return Structured record (t_elt_result_rec) containing status, processed/merged counts,
      *         and error details if any.
      */
     FUNCTION f_load_capacity(
         pi_commit IN BOOLEAN DEFAULT TRUE
-    ) RETURN t_etl_result_rec;
+    ) RETURN t_elt_result_rec;
 
     /**
      * Transforms and loads grid carbon intensity data from STG_EMBER_CARBON_INTENSITY
@@ -101,12 +100,12 @@ CREATE OR REPLACE PACKAGE helios_core.pkg_ember_etl AS
      *
      * @param  pi_commit Controls transaction autonomy: TRUE issues COMMIT on success,
      *                   FALSE keeps transaction uncommitted for parent orchestrator.
-     * @return Structured record (t_etl_result_rec) containing status, processed/merged counts,
+     * @return Structured record (t_elt_result_rec) containing status, processed/merged counts,
      *         and error details if any.
      */
     FUNCTION f_load_carbon_intensity(
         pi_commit IN BOOLEAN DEFAULT TRUE
-    ) RETURN t_etl_result_rec;
+    ) RETURN t_elt_result_rec;
 
     /**
      * Transforms and loads power demand data from STG_EMBER_DEMAND
@@ -115,12 +114,12 @@ CREATE OR REPLACE PACKAGE helios_core.pkg_ember_etl AS
      *
      * @param  pi_commit Controls transaction autonomy: TRUE issues COMMIT on success,
      *                   FALSE keeps transaction uncommitted for parent orchestrator.
-     * @return Structured record (t_etl_result_rec) containing status, processed/merged counts,
+     * @return Structured record (t_elt_result_rec) containing status, processed/merged counts,
      *         and error details if any.
      */
     FUNCTION f_load_demand(
         pi_commit IN BOOLEAN DEFAULT TRUE
-    ) RETURN t_etl_result_rec;
+    ) RETURN t_elt_result_rec;
 
     /**
      * Transforms and loads power sector greenhouse gas emissions from STG_EMBER_EMISSIONS
@@ -129,25 +128,25 @@ CREATE OR REPLACE PACKAGE helios_core.pkg_ember_etl AS
      *
      * @param  pi_commit Controls transaction autonomy: TRUE issues COMMIT on success,
      *                   FALSE keeps transaction uncommitted for parent orchestrator.
-     * @return Structured record (t_etl_result_rec) containing status, processed/merged counts,
+     * @return Structured record (t_elt_result_rec) containing status, processed/merged counts,
      *         and error details if any.
      */
     FUNCTION f_load_emissions(
         pi_commit IN BOOLEAN DEFAULT TRUE
-    ) RETURN t_etl_result_rec;
+    ) RETURN t_elt_result_rec;
 
     /**
-     * Master ETL orchestrator function. Executes dimension merge followed by all fact
+     * Master elt orchestrator function. Executes dimension merge followed by all fact
      * table loads in sequential dependency order within a single transaction boundary.
      *
      * @param  pi_commit Controls transaction autonomy: TRUE issues atomic COMMIT at completion
      *                   or ROLLBACK on failure; FALSE leaves transaction management to caller.
-     * @return Aggregated result record (t_etl_result_rec) with total processed/merged rows,
+     * @return Aggregated result record (t_elt_result_rec) with total processed/merged rows,
      *         overall elapsed time, and error summary.
      */
     FUNCTION f_load_all(
         pi_commit IN BOOLEAN DEFAULT TRUE
-    ) RETURN t_etl_result_rec;
+    ) RETURN t_elt_result_rec;
 
     /**
      * Convenience procedure wrapper around f_load_all.
@@ -159,5 +158,5 @@ CREATE OR REPLACE PACKAGE helios_core.pkg_ember_etl AS
         pi_commit IN BOOLEAN DEFAULT TRUE
     );
 
-END pkg_ember_etl;
+END pkg_ember_elt;
 /

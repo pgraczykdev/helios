@@ -4,7 +4,7 @@ import pytest
 
 from helios.db import OracleDatabaseConnector
 from helios.elt.extraction.pipeline import Dataset, TemporalResolution
-from helios.elt.loading import StagingLoader, LoadStatus
+from helios.elt.load import StagingLoader, LoadStatus
 
 load_dotenv()
 
