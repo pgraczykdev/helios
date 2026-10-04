@@ -1,0 +1,32 @@
+breadcrumb breadcrumb (
+    name: Breadcrumb
+
+    entry home (
+        name: Home
+        pageNumber: 1
+        execution {
+            sequence: 10
+        }
+        link {
+            target: {
+                page: 1
+            }
+        }
+    )
+
+    entry rankings (
+        name: Rankings
+        pageNumber: 2
+        execution {
+            sequence: 20
+        }
+        link {
+            target: {
+                page: 2
+            }
+        }
+    )
+
+)
+
+

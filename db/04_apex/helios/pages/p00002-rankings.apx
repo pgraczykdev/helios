@@ -1,0 +1,271 @@
+page 2 (
+    name: Global Rankings
+    alias: RANKINGS
+    title: Global Renewables Rankings
+    appearance {
+        pageTemplate: @/standard
+        templateOptions: #DEFAULT#
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+    }
+    security {
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+
+    region breadcrumb (
+        name: Rankings
+        type: breadcrumb
+        source {
+            breadcrumb: @breadcrumb
+        }
+        layout {
+            sequence: 10
+            slot: breadcrumbBar
+        }
+        appearance {
+            template: @/title-bar
+            templateOptions: #DEFAULT#
+        }
+        componentAppearance {
+            breadcrumbTemplate: @/breadcrumb
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region chart_top_renewables (
+        name: Top 15 OZE Leaders (% Share)
+        type: chart
+        layout {
+            sequence: 20
+            slot: body
+        }
+        appearance {
+            template: @/standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--scrollBody
+            ]
+        }
+        chart {
+            type: bar
+        }
+        chartAppearance {
+            orientation: horizontal
+        }
+        chartLayout {
+            height: 420
+        }
+
+        series top_renewables_series (
+            name: Renewables Share
+            execution {
+                sequence: 10
+            }
+            source {
+                type: sqlQuery
+                pageItemsToSubmit: [
+                    P0_YEAR
+                ]
+                sqlQuery:
+                    ```sql
+                    SELECT * FROM pkg_apex_queries.f_global_top_renewables(
+                        p_year  => :P0_YEAR,
+                        p_limit => 15
+                    )
+                    ORDER BY RENEWABLES_SHARE_PCT ASC
+                    ```
+            }
+            columnMapping {
+                label: ENTITY_NAME
+                value: RENEWABLES_SHARE_PCT
+            }
+        )
+
+        axis x (
+            name: x
+            title: Renewables Share (%)
+            value {
+                format: decimal
+                decimalPlaces: 1
+                formatScaling: none
+            }
+        )
+
+        axis y (
+            name: y
+            title: Country
+        )
+    )
+
+    region report_rankings (
+        name: Global Country Rankings
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            pageItemsToSubmit: [
+                P0_YEAR
+            ]
+            sqlQuery:
+                ```sql
+                SELECT
+                    rank_num,
+                    entity_name,
+                    entity_code,
+                    renewables_share_pct,
+                    renewables_generation_twh,
+                    total_generation_twh,
+                    clean_share_pct
+                FROM pkg_apex_queries.f_global_renewables_ranking(
+                    p_year => :P0_YEAR
+                )
+                ```
+        }
+        layout {
+            sequence: 30
+            slot: body
+        }
+        appearance {
+            template: @/standard
+            templateOptions: #DEFAULT#
+        }
+        componentAppearance {
+            template: @/standard
+            templateOptions: [
+                #DEFAULT#
+                t-Report--stretch
+                t-Report--horizontalBorders
+            ]
+        }
+        pagination {
+            type: rowRangesXToYOfZWithPagination
+            displayPosition: bottomRight
+        }
+
+        column RANK_NUM (
+            heading {
+                heading: Rank
+                alignment: end
+            }
+            layout {
+                sequence: 10
+                columnAlignment: end
+            }
+        )
+
+        column ENTITY_NAME (
+            heading {
+                heading: Country
+                alignment: start
+            }
+            layout {
+                sequence: 20
+                columnAlignment: start
+            }
+        )
+
+        column ENTITY_CODE (
+            heading {
+                heading: Code
+                alignment: center
+            }
+            layout {
+                sequence: 30
+                columnAlignment: center
+            }
+        )
+
+        column RENEWABLES_SHARE_PCT (
+            heading {
+                heading: Renewables Share (%)
+                alignment: end
+            }
+            layout {
+                sequence: 40
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: 990.0
+            }
+        )
+
+        column RENEWABLES_GENERATION_TWH (
+            heading {
+                heading: Renewables Gen (TWh)
+                alignment: end
+            }
+            layout {
+                sequence: 50
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: 999G990D00
+            }
+        )
+
+        column TOTAL_GENERATION_TWH (
+            heading {
+                heading: Total Gen (TWh)
+                alignment: end
+            }
+            layout {
+                sequence: 60
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: 999G990D00
+            }
+        )
+
+        column CLEAN_SHARE_PCT (
+            heading {
+                heading: Clean Share (%)
+                alignment: end
+            }
+            layout {
+                sequence: 70
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: 990.0
+            }
+        )
+    )
+
+    dynamicAction da_year_change (
+        name: Refresh Rankings on Year Change
+        execution {
+            sequence: 10
+        }
+        when {
+            event: change
+            selectionType: items
+            items: [
+                P0_YEAR
+            ]
+        }
+        action refresh_chart (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @chart_top_renewables
+            }
+            execution {
+                sequence: 10
+            }
+        )
+        action refresh_report (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @report_rankings
+            }
+            execution {
+                sequence: 20
+            }
+        )
+    )
+
+)
