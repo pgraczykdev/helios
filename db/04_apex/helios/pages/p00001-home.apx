@@ -1,0 +1,268 @@
+page 1 (
+    name: Home
+    alias: HOME
+    title: Helios
+    appearance {
+        pageTemplate: @/standard
+        templateOptions: #DEFAULT#
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+    }
+    security {
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+
+    region breadcrumb (
+        name: Home
+        type: breadcrumb
+        source {
+            breadcrumb: @breadcrumb
+        }
+        layout {
+            sequence: 10
+            slot: breadcrumbBar
+        }
+        appearance {
+            template: @/title-bar
+            templateOptions: #DEFAULT#
+        }
+        componentAppearance {
+            breadcrumbTemplate: @/breadcrumb
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region cards (
+        name: Cards
+        type: cards
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT * FROM pkg_apex_queries.f_home_kpi_cards(
+                    p_country => :P0_COUNTRY,
+                    p_year    => :P0_YEAR
+                )
+                ```
+            pageItemsToSubmit: [
+                P0_COUNTRY
+                P0_YEAR
+            ]
+        }
+        layout {
+            sequence: 20
+            slot: body
+        }
+        appearance {
+            template: @/cards-container
+            templateOptions: [
+                #DEFAULT#
+                t-CardsRegion--hideHeader js-addHiddenHeadingRoleDesc
+            ]
+        }
+        card {
+            primaryKeyColumn1: KPI_KEY
+        }
+        title {
+            column: KPI_TITLE
+        }
+        subtitle {
+            advancedFormatting: true
+            htmlExpression:
+                ```html
+                {if KPI_KEY = 'ENTITY_INFO'/}
+                Rok &METRIC_VAL.
+                {else/}
+                &METRIC_VAL. &METRIC_UNIT.
+                {endif/}
+                ```
+        }
+        body {
+            advancedFormatting: true
+            htmlExpression:
+                ```html
+                {if KPI_KEY = 'ENTITY_INFO'/}
+                <span class="u-text-muted">&SUB_TEXT.</span>
+                {else/}
+                {if ?YOY_VAL/}
+                <span class="{if IS_POSITIVE = 1/}u-success{else/}u-danger{endif/}">{if YOY_VAL > 0/}+{endif/}&YOY_VAL. &YOY_UNIT. YoY</span>
+                {endif/}
+                {if ?SUB_TEXT/}
+                <span class="u-text-muted">&SUB_TEXT.</span>
+                {endif/}
+                {endif/}
+                ```
+        }
+        iconAndBadge {
+            iconSource: iconClassColumn
+            iconColumn: KPI_ICON
+        }
+    )
+
+    region chart_mix (
+        name: Fuel Mix Share
+        type: chart
+        layout {
+            sequence: 30
+            slot: body
+        }
+        appearance {
+            template: @/standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--scrollBody
+            ]
+        }
+        chart {
+            type: donut
+        }
+        chartLayout {
+            height: 400
+        }
+
+        series fuel_mix_series (
+            name: Share
+            execution {
+                sequence: 10
+            }
+            source {
+                type: sqlQuery
+                pageItemsToSubmit: [
+                    P0_COUNTRY
+                    P0_YEAR
+                ]
+                sqlQuery:
+                    ```sql
+            SELECT * FROM pkg_apex_queries.f_home_fuel_mix (
+                        p_country => :P0_COUNTRY,
+                        p_year    => :P0_YEAR
+            )
+                    ```
+            }
+            columnMapping {
+                label: SERIES_NAME
+                value: SHARE_OF_GENERATION_PCT
+            }
+        )
+    )
+
+    region chart_history (
+        name: Generation History (TWh)
+        type: chart
+        layout {
+            sequence: 40
+            slot: body
+            startNewRow: false
+        }
+        appearance {
+            template: @/standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--scrollBody
+            ]
+        }
+        chart {
+            type: bar
+        }
+        chartAppearance {
+            stack: true
+        }
+        chartLayout {
+            height: 400
+        }
+        legend {
+            show: true
+            position: end
+        }
+
+        series history_series (
+            name: Annual Generation
+            execution {
+                sequence: 10
+            }
+            source {
+                type: sqlQuery
+                pageItemsToSubmit: [
+                    P0_COUNTRY
+                    P0_YEAR
+                ]
+                sqlQuery:
+                    ```sql
+            SELECT * FROM pkg_apex_queries.f_home_generation_history (
+                        p_country => :P0_COUNTRY,
+                        p_year    => :P0_YEAR
+            )
+                    ```
+            }
+            columnMapping {
+                seriesName: SERIES_NAME
+                label: YEAR_LABEL
+                value: GENERATION_TWH
+            }
+        )
+
+        axis x (
+            name: x
+            title: Year
+        )
+
+        axis y (
+            name: y
+            title: Generation (TWh)
+            value {
+                format: decimal
+                decimalPlaces: 0
+                formatScaling: none
+            }
+        )
+    )
+
+    dynamicAction da_filter_change (
+        name: Refresh on Filter Change
+        execution {
+            sequence: 10
+        }
+        when {
+            event: change
+            selectionType: items
+            items: [
+                P0_COUNTRY
+                P0_YEAR
+            ]
+        }
+        action refresh_cards (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @cards
+            }
+            execution {
+                sequence: 10
+            }
+        )
+        action refresh_mix (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @chart_mix
+            }
+            execution {
+                sequence: 20
+            }
+        )
+        action refresh_history (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @chart_history
+            }
+            execution {
+                sequence: 30
+            }
+        )
+    )
+
+)

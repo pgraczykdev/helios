@@ -1,0 +1,88 @@
+page 0 (
+    name: Global Page
+
+    pageItem P0_COUNTRY (
+        type: popupLov
+        label {
+            label: Country
+            alignment: left
+        }
+        default {
+            type: static
+            staticValue: POL
+        }
+        lov {
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    entity_name || ' (' || entity_code || ')' AS d,
+                    entity_code AS r
+                FROM v_renewables_mix_overview
+                WHERE temporal_resolution = 'yearly'
+                  AND is_aggregate_entity = 0
+                GROUP BY entity_name, entity_code
+                ORDER BY entity_name
+                ```
+        }
+        layout {
+            sequence: 10
+            slot: body
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+        serverSideCondition {
+            type: currentPageNotInList
+            pages: [
+                2
+                9999
+            ]
+        }
+    )
+
+    pageItem P0_YEAR (
+        type: popupLov
+        label {
+            label: Year
+            alignment: left
+        }
+        default {
+            type: static
+            staticValue: 2023
+        }
+        lov {
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT DISTINCT
+                    TO_CHAR(year_num) AS d,
+                    year_num AS r
+                FROM v_renewables_mix_overview
+                WHERE temporal_resolution = 'yearly'
+                ORDER BY year_num DESC
+                ```
+            displayExtraValues: false
+            displayNullValue: false
+        }
+        layout {
+            sequence: 20
+            slot: body
+            alignment: left
+            startNewRow: false
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+            width: 30
+        }
+        serverSideCondition {
+            type: currentPage!=page
+            page: 9999
+        }
+    )
+
+)
