@@ -1097,50 +1097,36 @@ CREATE OR REPLACE PACKAGE BODY helios_core.pkg_ember_elt AS
 
 
     -- ------------------------------------------------------------------------
-    -- 7. FUNCTION f_load_all (Master Orchestrator)
+    -- 7. FUNCTION f_load_all (Master Orchestrator with Named Exceptions)
     -- ------------------------------------------------------------------------
     FUNCTION f_load_all(
         pi_commit IN BOOLEAN DEFAULT TRUE
     ) RETURN t_elt_result_rec IS
         lc_scope     CONSTANT VARCHAR2(100 CHAR) := gc_scope_prefix || 'f_load_all';
         l_params     logger.tab_param;
-        l_result     t_elt_result_rec;
         l_step_res   t_elt_result_rec;
         l_start_ts   TIMESTAMP := SYSTIMESTAMP;
         l_total_proc NUMBER := 0;
         l_total_mrg  NUMBER := 0;
+        l_last_error VARCHAR2(4000 CHAR);
     BEGIN
         logger.append_param(p_params => l_params, p_name => 'pi_commit', p_val => pi_commit);
         logger.log(p_text => 'START', p_scope => lc_scope, p_params => l_params);
         logger.time_start(p_unit => lc_scope);
 
-        l_result.status        := pkg_constants.gc_res_success;
-        l_result.start_ts      := l_start_ts;
-        l_result.error_message := NULL;
-
         -- Step 7.1: Merge Dimensions
         l_step_res := f_merge_dimensions(pi_commit => pi_commit);
         IF l_step_res.status = pkg_constants.gc_res_error THEN
-            logger.time_stop(p_unit => lc_scope, p_scope => lc_scope);
-            logger.log_error(p_text => 'Dimensions merge failed: ' || l_step_res.error_message, p_scope => lc_scope);
-            l_result.status            := pkg_constants.gc_res_error;
-            l_result.error_message     := 'Dimensions merge failed: ' || l_step_res.error_message;
-            l_result.end_ts            := SYSTIMESTAMP;
-            l_result.execution_seconds := ROUND(EXTRACT(SECOND FROM (l_result.end_ts - l_start_ts)), 2);
-            RETURN l_result;
+            l_last_error := l_step_res.error_message;
+            RAISE pkg_ember_elt_err.e_dimensions_failed;
         END IF;
         l_total_mrg := l_total_mrg + l_step_res.rows_merged;
 
         -- Step 7.2: Load Generation Facts
         l_step_res := f_load_generation(pi_commit => pi_commit);
         IF l_step_res.status = pkg_constants.gc_res_error THEN
-            logger.time_stop(p_unit => lc_scope, p_scope => lc_scope);
-            logger.log_error(p_text => 'Generation load failed: ' || l_step_res.error_message, p_scope => lc_scope);
-            l_result.status            := pkg_constants.gc_res_error;
-            l_result.error_message     := 'Generation load failed: ' || l_step_res.error_message;
-            l_result.end_ts            := SYSTIMESTAMP;
-            l_result.execution_seconds := ROUND(EXTRACT(SECOND FROM (l_result.end_ts - l_start_ts)), 2);
-            RETURN l_result;
+            l_last_error := l_step_res.error_message;
+            RAISE pkg_ember_elt_err.e_generation_failed;
         END IF;
         l_total_proc := l_total_proc + l_step_res.rows_processed;
         l_total_mrg  := l_total_mrg + l_step_res.rows_merged;
@@ -1148,13 +1134,8 @@ CREATE OR REPLACE PACKAGE BODY helios_core.pkg_ember_elt AS
         -- Step 7.3: Load Capacity Facts
         l_step_res := f_load_capacity(pi_commit => pi_commit);
         IF l_step_res.status = pkg_constants.gc_res_error THEN
-            logger.time_stop(p_unit => lc_scope, p_scope => lc_scope);
-            logger.log_error(p_text => 'Capacity load failed: ' || l_step_res.error_message, p_scope => lc_scope);
-            l_result.status            := pkg_constants.gc_res_error;
-            l_result.error_message     := 'Capacity load failed: ' || l_step_res.error_message;
-            l_result.end_ts            := SYSTIMESTAMP;
-            l_result.execution_seconds := ROUND(EXTRACT(SECOND FROM (l_result.end_ts - l_start_ts)), 2);
-            RETURN l_result;
+            l_last_error := l_step_res.error_message;
+            RAISE pkg_ember_elt_err.e_capacity_failed;
         END IF;
         l_total_proc := l_total_proc + l_step_res.rows_processed;
         l_total_mrg  := l_total_mrg + l_step_res.rows_merged;
@@ -1162,13 +1143,8 @@ CREATE OR REPLACE PACKAGE BODY helios_core.pkg_ember_elt AS
         -- Step 7.4: Load Carbon Intensity Facts
         l_step_res := f_load_carbon_intensity(pi_commit => pi_commit);
         IF l_step_res.status = pkg_constants.gc_res_error THEN
-            logger.time_stop(p_unit => lc_scope, p_scope => lc_scope);
-            logger.log_error(p_text => 'Carbon intensity load failed: ' || l_step_res.error_message, p_scope => lc_scope);
-            l_result.status            := pkg_constants.gc_res_error;
-            l_result.error_message     := 'Carbon intensity load failed: ' || l_step_res.error_message;
-            l_result.end_ts            := SYSTIMESTAMP;
-            l_result.execution_seconds := ROUND(EXTRACT(SECOND FROM (l_result.end_ts - l_start_ts)), 2);
-            RETURN l_result;
+            l_last_error := l_step_res.error_message;
+            RAISE pkg_ember_elt_err.e_carbon_intensity_failed;
         END IF;
         l_total_proc := l_total_proc + l_step_res.rows_processed;
         l_total_mrg  := l_total_mrg + l_step_res.rows_merged;
@@ -1176,13 +1152,8 @@ CREATE OR REPLACE PACKAGE BODY helios_core.pkg_ember_elt AS
         -- Step 7.5: Load Demand Facts
         l_step_res := f_load_demand(pi_commit => pi_commit);
         IF l_step_res.status = pkg_constants.gc_res_error THEN
-            logger.time_stop(p_unit => lc_scope, p_scope => lc_scope);
-            logger.log_error(p_text => 'Demand load failed: ' || l_step_res.error_message, p_scope => lc_scope);
-            l_result.status            := pkg_constants.gc_res_error;
-            l_result.error_message     := 'Demand load failed: ' || l_step_res.error_message;
-            l_result.end_ts            := SYSTIMESTAMP;
-            l_result.execution_seconds := ROUND(EXTRACT(SECOND FROM (l_result.end_ts - l_start_ts)), 2);
-            RETURN l_result;
+            l_last_error := l_step_res.error_message;
+            RAISE pkg_ember_elt_err.e_demand_failed;
         END IF;
         l_total_proc := l_total_proc + l_step_res.rows_processed;
         l_total_mrg  := l_total_mrg + l_step_res.rows_merged;
@@ -1190,13 +1161,8 @@ CREATE OR REPLACE PACKAGE BODY helios_core.pkg_ember_elt AS
         -- Step 7.6: Load Emissions Facts
         l_step_res := f_load_emissions(pi_commit => pi_commit);
         IF l_step_res.status = pkg_constants.gc_res_error THEN
-            logger.time_stop(p_unit => lc_scope, p_scope => lc_scope);
-            logger.log_error(p_text => 'Emissions load failed: ' || l_step_res.error_message, p_scope => lc_scope);
-            l_result.status            := pkg_constants.gc_res_error;
-            l_result.error_message     := 'Emissions load failed: ' || l_step_res.error_message;
-            l_result.end_ts            := SYSTIMESTAMP;
-            l_result.execution_seconds := ROUND(EXTRACT(SECOND FROM (l_result.end_ts - l_start_ts)), 2);
-            RETURN l_result;
+            l_last_error := l_step_res.error_message;
+            RAISE pkg_ember_elt_err.e_emissions_failed;
         END IF;
         l_total_proc := l_total_proc + l_step_res.rows_processed;
         l_total_mrg  := l_total_mrg + l_step_res.rows_merged;
@@ -1206,28 +1172,101 @@ CREATE OR REPLACE PACKAGE BODY helios_core.pkg_ember_elt AS
         END IF;
 
         logger.time_stop(p_unit => lc_scope, p_scope => lc_scope);
-        l_result.rows_processed    := l_total_proc;
-        l_result.rows_merged       := l_total_mrg;
-        l_result.end_ts            := SYSTIMESTAMP;
-        l_result.execution_seconds := ROUND(EXTRACT(SECOND FROM (l_result.end_ts - l_start_ts)), 2);
-
-        logger.log_info(p_text => 'Master ELT completed. Processed: ' || l_total_proc || ', Merged: ' || l_total_mrg, p_scope => lc_scope);
+        logger.log_info(
+            p_text  => 'Master ELT completed. Processed: ' || l_total_proc || ', Merged: ' || l_total_mrg,
+            p_scope => lc_scope
+        );
         logger.log(p_text => 'END', p_scope => lc_scope);
-        RETURN l_result;
+
+        RETURN pkg_ember_elt_utl.f_build_success_result(
+            pi_start_ts  => l_start_ts,
+            pi_rows_proc => l_total_proc,
+            pi_rows_mrg  => l_total_mrg
+        );
     EXCEPTION
-        WHEN OTHERS THEN
-            IF pi_commit THEN
-                ROLLBACK;
-            END IF;
+        WHEN pkg_ember_elt_err.e_dimensions_failed THEN
+            IF pi_commit THEN ROLLBACK; END IF;
             logger.time_stop(p_unit => lc_scope, p_scope => lc_scope);
-            logger.log_error(p_text => 'Master ELT aborted due to unhandled error', p_scope => lc_scope, p_params => l_params);
-            l_result.status            := pkg_constants.gc_res_error;
-            l_result.rows_processed    := l_total_proc;
-            l_result.rows_merged       := l_total_mrg;
-            l_result.end_ts            := SYSTIMESTAMP;
-            l_result.execution_seconds := ROUND(EXTRACT(SECOND FROM (l_result.end_ts - l_start_ts)), 2);
-            l_result.error_message     := 'Master ELT orchestration failed';
-            RETURN l_result;
+            RETURN pkg_ember_elt_utl.f_handle_step_error(
+                pi_step_name     => 'Dimensions merge',
+                pi_error_details => l_last_error,
+                pi_start_ts      => l_start_ts,
+                pi_rows_proc     => l_total_proc,
+                pi_rows_mrg      => l_total_mrg,
+                pi_scope         => lc_scope
+            );
+
+        WHEN pkg_ember_elt_err.e_generation_failed THEN
+            IF pi_commit THEN ROLLBACK; END IF;
+            logger.time_stop(p_unit => lc_scope, p_scope => lc_scope);
+            RETURN pkg_ember_elt_utl.f_handle_step_error(
+                pi_step_name     => 'Generation load',
+                pi_error_details => l_last_error,
+                pi_start_ts      => l_start_ts,
+                pi_rows_proc     => l_total_proc,
+                pi_rows_mrg      => l_total_mrg,
+                pi_scope         => lc_scope
+            );
+
+        WHEN pkg_ember_elt_err.e_capacity_failed THEN
+            IF pi_commit THEN ROLLBACK; END IF;
+            logger.time_stop(p_unit => lc_scope, p_scope => lc_scope);
+            RETURN pkg_ember_elt_utl.f_handle_step_error(
+                pi_step_name     => 'Capacity load',
+                pi_error_details => l_last_error,
+                pi_start_ts      => l_start_ts,
+                pi_rows_proc     => l_total_proc,
+                pi_rows_mrg      => l_total_mrg,
+                pi_scope         => lc_scope
+            );
+
+        WHEN pkg_ember_elt_err.e_carbon_intensity_failed THEN
+            IF pi_commit THEN ROLLBACK; END IF;
+            logger.time_stop(p_unit => lc_scope, p_scope => lc_scope);
+            RETURN pkg_ember_elt_utl.f_handle_step_error(
+                pi_step_name     => 'Carbon intensity load',
+                pi_error_details => l_last_error,
+                pi_start_ts      => l_start_ts,
+                pi_rows_proc     => l_total_proc,
+                pi_rows_mrg      => l_total_mrg,
+                pi_scope         => lc_scope
+            );
+
+        WHEN pkg_ember_elt_err.e_demand_failed THEN
+            IF pi_commit THEN ROLLBACK; END IF;
+            logger.time_stop(p_unit => lc_scope, p_scope => lc_scope);
+            RETURN pkg_ember_elt_utl.f_handle_step_error(
+                pi_step_name     => 'Demand load',
+                pi_error_details => l_last_error,
+                pi_start_ts      => l_start_ts,
+                pi_rows_proc     => l_total_proc,
+                pi_rows_mrg      => l_total_mrg,
+                pi_scope         => lc_scope
+            );
+
+        WHEN pkg_ember_elt_err.e_emissions_failed THEN
+            IF pi_commit THEN ROLLBACK; END IF;
+            logger.time_stop(p_unit => lc_scope, p_scope => lc_scope);
+            RETURN pkg_ember_elt_utl.f_handle_step_error(
+                pi_step_name     => 'Emissions load',
+                pi_error_details => l_last_error,
+                pi_start_ts      => l_start_ts,
+                pi_rows_proc     => l_total_proc,
+                pi_rows_mrg      => l_total_mrg,
+                pi_scope         => lc_scope
+            );
+
+        WHEN OTHERS THEN
+            IF pi_commit THEN ROLLBACK; END IF;
+            logger.time_stop(p_unit => lc_scope, p_scope => lc_scope);
+            RETURN pkg_ember_elt_utl.f_handle_step_error(
+                pi_step_name     => 'Master ELT',
+                pi_error_details => 'Unhandled exception: ' || SQLERRM,
+                pi_start_ts      => l_start_ts,
+                pi_rows_proc     => l_total_proc,
+                pi_rows_mrg      => l_total_mrg,
+                pi_scope         => lc_scope
+            );
     END f_load_all;
 
 
