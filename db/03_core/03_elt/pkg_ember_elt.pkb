@@ -166,7 +166,15 @@ CREATE OR REPLACE PACKAGE BODY helios_core.pkg_ember_elt AS
         USING (
             SELECT 
                 series,
-                MAX(is_aggregate_series) AS is_aggregate_series,
+                MAX(CASE 
+                    -- Canonical elementary fuels: ALWAYS 0
+                    WHEN LOWER(series) IN ('solar', 'wind', 'hydro', 'bioenergy', 'geothermal', 
+                                        'coal', 'gas', 'nuclear', 'other fossil', 'other renewables') THEN 0
+                    -- Always 1 for aggregate and balance categories
+                    WHEN LOWER(series) IN ('renewables', 'clean', 'fossil', 'total generation', 'demand', 
+                                        'wind and solar', 'hydro, bioenergy and other renewables', 'net imports') THEN 1
+                    ELSE NVL(is_aggregate_series, 0)
+                    END) AS is_aggregate_series,
                 MAX(CASE 
                     WHEN LOWER(series) IN ('solar', 'wind', 'hydro', 'bioenergy', 'other renewables', 'geothermal') THEN pkg_constants.gc_cat_renewables
                     WHEN LOWER(series) IN ('coal', 'gas', 'other fossil') THEN pkg_constants.gc_cat_fossil
@@ -256,47 +264,44 @@ CREATE OR REPLACE PACKAGE BODY helios_core.pkg_ember_elt AS
 
         MERGE INTO helios_core.dim_period tgt
         USING (
+            WITH raw_periods AS (
+                SELECT temporal_resolution, raw_date FROM stg_ember_generation       WHERE stg_status = pkg_constants.gc_status_new AND raw_date IS NOT NULL
+                UNION ALL
+                SELECT temporal_resolution, raw_date FROM stg_ember_capacity         WHERE stg_status = pkg_constants.gc_status_new AND raw_date IS NOT NULL
+                UNION ALL
+                SELECT temporal_resolution, raw_date FROM stg_ember_carbon_intensity WHERE stg_status = pkg_constants.gc_status_new AND raw_date IS NOT NULL
+                UNION ALL
+                SELECT temporal_resolution, raw_date FROM stg_ember_demand           WHERE stg_status = pkg_constants.gc_status_new AND raw_date IS NOT NULL
+                UNION ALL
+                SELECT temporal_resolution, raw_date FROM stg_ember_emissions        WHERE stg_status = pkg_constants.gc_status_new AND raw_date IS NOT NULL
+            ),
+            parsed_periods AS (
+                SELECT 
+                    temporal_resolution,
+                    raw_date,
+                    TO_DATE(
+                        CASE 
+                            WHEN LENGTH(TRIM(raw_date)) = 4  THEN raw_date || '-01-01'
+                            WHEN LENGTH(TRIM(raw_date)) = 7  THEN raw_date || '-01'
+                            WHEN LENGTH(TRIM(raw_date)) = 10 THEN raw_date
+                        END, 
+                        'YYYY-MM-DD'
+                    ) AS period_date
+                FROM raw_periods
+            )
             SELECT 
                 temporal_resolution,
                 raw_date,
-                MAX(period_date)  AS period_date,
-                MAX(year_num)     AS year_num,
-                MAX(month_num)    AS month_num,
-                MAX(quarter_num)  AS quarter_num,
-                MAX(period_label) AS period_label
-            FROM (
-                SELECT 
-                    temporal_resolution, 
-                    raw_date,
-                    CASE 
-                        WHEN temporal_resolution = pkg_constants.gc_grain_yearly  THEN TO_DATE(raw_date || '-01-01', 'YYYY-MM-DD')
-                        WHEN temporal_resolution = pkg_constants.gc_grain_monthly THEN TO_DATE(raw_date || '-01', 'YYYY-MM-DD')
-                    END AS period_date,
-                    TO_NUMBER(SUBSTR(raw_date, 1, 4)) AS year_num,
-                    CASE 
-                        WHEN temporal_resolution = pkg_constants.gc_grain_monthly THEN TO_NUMBER(SUBSTR(raw_date, 6, 2))
-                        ELSE NULL
-                    END AS month_num,
-                    CASE 
-                        WHEN temporal_resolution = pkg_constants.gc_grain_monthly THEN TO_NUMBER(TO_CHAR(TO_DATE(raw_date || '-01', 'YYYY-MM-DD'), 'Q'))
-                        ELSE NULL
-                    END AS quarter_num,
-                    CASE 
-                        WHEN temporal_resolution = pkg_constants.gc_grain_yearly  THEN raw_date
-                        WHEN temporal_resolution = pkg_constants.gc_grain_monthly THEN TO_CHAR(TO_DATE(raw_date || '-01', 'YYYY-MM-DD'), 'Mon YYYY')
-                    END AS period_label
-                FROM (
-                    SELECT temporal_resolution, raw_date FROM stg_ember_generation       WHERE stg_status = pkg_constants.gc_status_new AND raw_date IS NOT NULL
-                    UNION ALL
-                    SELECT temporal_resolution, raw_date FROM stg_ember_capacity         WHERE stg_status = pkg_constants.gc_status_new AND raw_date IS NOT NULL
-                    UNION ALL
-                    SELECT temporal_resolution, raw_date FROM stg_ember_carbon_intensity WHERE stg_status = pkg_constants.gc_status_new AND raw_date IS NOT NULL
-                    UNION ALL
-                    SELECT temporal_resolution, raw_date FROM stg_ember_demand           WHERE stg_status = pkg_constants.gc_status_new AND raw_date IS NOT NULL
-                    UNION ALL
-                    SELECT temporal_resolution, raw_date FROM stg_ember_emissions        WHERE stg_status = pkg_constants.gc_status_new AND raw_date IS NOT NULL
-                )
-            )
+                MAX(period_date)                                               AS period_date,
+                MAX(EXTRACT(YEAR FROM period_date))                            AS year_num,
+                MAX(CASE WHEN temporal_resolution = pkg_constants.gc_grain_monthly 
+                            THEN EXTRACT(MONTH FROM period_date) ELSE NULL END)   AS month_num,
+                MAX(CASE WHEN temporal_resolution = pkg_constants.gc_grain_monthly 
+                            THEN TO_NUMBER(TO_CHAR(period_date, 'Q')) ELSE NULL END) AS quarter_num,
+                MAX(CASE WHEN temporal_resolution = pkg_constants.gc_grain_yearly 
+                            THEN TO_CHAR(EXTRACT(YEAR FROM period_date))
+                            ELSE TO_CHAR(period_date, 'Mon YYYY', 'NLS_DATE_LANGUAGE = English') END) AS period_label
+            FROM parsed_periods
             GROUP BY temporal_resolution, raw_date
         ) src
         ON (tgt.temporal_resolution = src.temporal_resolution AND tgt.raw_date = src.raw_date)
