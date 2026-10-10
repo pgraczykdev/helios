@@ -21,7 +21,7 @@ WITH gen_base AS (
         p.period_label,
         f.generation_twh,
         f.share_of_generation_pct,
-        -- Generacja z tego samego okresu poprzedniego roku:
+        -- generation from the same period in the previous year:
         LAG(f.generation_twh, 1) OVER (
             PARTITION BY f.entity_id, f.series_id, p.temporal_resolution, p.month_num
             ORDER BY p.year_num
@@ -78,14 +78,14 @@ WITH mix_base AS (
         p.month_num,
         p.quarter_num,
         p.period_label,
-        -- Sumy generacji per kategoria (wyłącznie paliwa elementarne is_aggregate = 0)
-        SUM(CASE WHEN s.series_category = 'Renewables' THEN f.generation_twh ELSE 0 END) AS renewables_twh,
-        SUM(CASE WHEN s.series_category = 'Fossil'     THEN f.generation_twh ELSE 0 END) AS fossil_twh,
-        SUM(CASE WHEN s.series_category = 'Nuclear'    THEN f.generation_twh ELSE 0 END) AS nuclear_twh,
-        SUM(CASE WHEN s.series_category IN ('Renewables', 'Nuclear', 'Clean') THEN f.generation_twh ELSE 0 END) AS
-clean_total_twh,
-        SUM(f.generation_twh) AS total_generation_twh,
-        -- Kluczowe technologie OZE:
+        -- generation sums per category
+        SUM(CASE WHEN s.series_category = 'Renewables' THEN GREATEST(f.generation_twh, 0) ELSE 0 END) AS renewables_twh,
+        SUM(CASE WHEN s.series_category = 'Fossil'     THEN GREATEST(f.generation_twh, 0) ELSE 0 END) AS fossil_twh,
+        SUM(CASE WHEN s.series_category = 'Nuclear'    THEN GREATEST(f.generation_twh, 0) ELSE 0 END) AS nuclear_twh,
+        SUM(CASE WHEN s.series_category IN ('Renewables', 'Nuclear', 'Clean') THEN GREATEST(f.generation_twh, 0) ELSE 0 END) AS clean_total_twh,
+        SUM(CASE WHEN LOWER(s.series_name) = 'net imports' THEN f.generation_twh ELSE 0 END) AS net_imports_twh, -- here could be negative
+        SUM(CASE WHEN LOWER(s.series_name) <> 'net imports' THEN GREATEST(f.generation_twh, 0) ELSE 0 END) AS total_generation_twh,
+        -- Key renewable technologies:
         SUM(CASE WHEN LOWER(s.series_name) = 'solar' THEN f.generation_twh ELSE 0 END) AS solar_twh,
         SUM(CASE WHEN LOWER(s.series_name) = 'wind'  THEN f.generation_twh ELSE 0 END) AS wind_twh,
         SUM(CASE WHEN LOWER(s.series_name) = 'hydro' THEN f.generation_twh ELSE 0 END) AS hydro_twh
@@ -124,15 +124,16 @@ mix_shares AS (
         ROUND(fossil_twh, 6) AS fossil_twh,
         ROUND(nuclear_twh, 6) AS nuclear_twh,
         ROUND(clean_total_twh, 6) AS clean_total_twh,
+        ROUND(net_imports_twh, 6) AS net_imports_twh,
         ROUND(total_generation_twh, 6) AS total_generation_twh,
         ROUND(solar_twh, 6) AS solar_twh,
         ROUND(wind_twh, 6) AS wind_twh,
         ROUND(hydro_twh, 6) AS hydro_twh,
-        -- Udziały procentowe w miksie:
-        ROUND((renewables_twh  / NULLIF(total_generation_twh, 0)) * 100, 2) AS renewables_share_pct,
-        ROUND((fossil_twh      / NULLIF(total_generation_twh, 0)) * 100, 2) AS fossil_share_pct,
-        ROUND((clean_total_twh / NULLIF(total_generation_twh, 0)) * 100, 2) AS clean_share_pct,
-        ROUND(((solar_twh + wind_twh) / NULLIF(total_generation_twh, 0)) * 100, 2) AS solar_wind_share_pct
+        -- Shares in the mix:
+        LEAST(ROUND((renewables_twh  / NULLIF(total_generation_twh, 0)) * 100, 2), 100) AS renewables_share_pct,
+        LEAST(ROUND((fossil_twh      / NULLIF(total_generation_twh, 0)) * 100, 2), 100) AS fossil_share_pct,
+        LEAST(ROUND((clean_total_twh / NULLIF(total_generation_twh, 0)) * 100, 2), 100) AS clean_share_pct,
+        LEAST(ROUND(((solar_twh + wind_twh) / NULLIF(total_generation_twh, 0)) * 100, 2), 100) AS solar_wind_share_pct
     FROM mix_base
 )
 SELECT
@@ -150,6 +151,7 @@ SELECT
     fossil_twh,
     nuclear_twh,
     clean_total_twh,
+    net_imports_twh,
     total_generation_twh,
     solar_twh,
     wind_twh,

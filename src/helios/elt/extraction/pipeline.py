@@ -48,7 +48,7 @@ class ExtractionResult:
     previous_watermark: str | None = None
     new_watermark: str | None = None
     start_date: str | None = None
-    saved_file: Path | None = None
+    saved_file: str | None = None
     error_message: str | None = None
 
 
