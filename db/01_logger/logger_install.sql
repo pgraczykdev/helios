@@ -341,7 +341,7 @@ begin
       select 'PURGE_MIN_LEVEL' pref_name, 'DEBUG' pref_value from dual union
       select 'LOGGER_VERSION' pref_name, '3.1.1' pref_value from dual union -- 3.1.1 will be replaced when running the build script
       select 'LEVEL' pref_name, 'DEBUG' pref_value from dual union
-      select 'PROTECT_ADMIN_PROCS' pref_name, 'TRUE' pref_value from dual union
+      select 'PROTECT_ADMIN_PROCS' pref_name, 'FALSE' pref_value from dual union
       select 'INCLUDE_CALL_STACK' pref_name, 'TRUE' pref_value from dual union
       select 'PREF_BY_CLIENT_ID_EXPIRE_HOURS' pref_name, '12' pref_value from dual union
       select 'INSTALL_SCHEMA' pref_name, sys_context('USERENV','CURRENT_SCHEMA') pref_value from dual union

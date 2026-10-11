@@ -2,7 +2,10 @@ authorization administration-rights (
     name: Administration Rights
     type: plSqlFunctionBody
     settings {
-        plsqlFunctionBody: return true;
+        plsqlFunctionBody:
+            ```plsql
+            return apex_util.current_user_in_group(p_group_name => 'Administrator');
+            ```
     }
     error {
         errorMessage: Insufficient privileges, user is not an Administrator

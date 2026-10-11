@@ -62,8 +62,8 @@ list navigation-bar (
 list navigation-menu (
     name: Navigation Menu
 
-    entry home (
-        label: Home
+    entry summary (
+        label: Summary
         icon {
             imageIconCssClasses: fa-home
         }
@@ -91,6 +91,24 @@ list navigation-menu (
             }
         }
     )
+
+     entry system-logs (
+            label: System Logs
+            icon {
+                imageIconCssClasses: fa-file-text-o
+            }
+            layout {
+                sequence: 30
+            }
+            link {
+                target: {
+                    page: 10
+                }
+            }
+            security {
+                authorizationScheme: @administration-rights
+            }
+        )
 
 )
 

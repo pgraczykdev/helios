@@ -18,3 +18,25 @@ lov boolean (
 
 )
 
+lov logger-levels (
+    name: LOGGER_LEVELS
+    source {
+        location: localDatabase
+        type: sqlQuery
+        sqlQuery:
+            ```sql
+            SELECT
+                d,
+                r,
+                lvl_order
+            FROM pkg_apex_queries.f_lov_logger_levels()
+            ```
+    }
+    columnMapping {
+        return: R
+        display: D
+        defaultSort: LVL_ORDER
+        sortDirection: ascNullsLast
+    }
+)
+

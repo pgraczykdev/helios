@@ -1,0 +1,1012 @@
+page 10 (
+    name: System Logs
+    alias: LOGS
+    title: System Logs & Administration
+    appearance {
+        pageTemplate: @/standard
+        templateOptions: #DEFAULT#
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+    }
+    security {
+        authorizationScheme: @administration-rights
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+
+    region breadcrumb (
+        name: System Logs
+        type: breadcrumb
+        source {
+            breadcrumb: @breadcrumb
+        }
+        layout {
+            sequence: 10
+            slot: breadcrumbBar
+        }
+        appearance {
+            template: @/title-bar
+            templateOptions: #DEFAULT#
+        }
+        componentAppearance {
+            breadcrumbTemplate: @/breadcrumb
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region logger_control (
+        name: Logger Settings
+        type: staticContent
+        layout {
+            sequence: 20
+            slot: body
+        }
+        appearance {
+            template: @/standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--scrollBody
+            ]
+        }
+    )
+
+    pageItem P10_CURRENT_LEVEL (
+        type: displayOnly
+        label {
+            label: Current Log Level
+            alignment: left
+        }
+        layout {
+            sequence: 10
+            region: @logger_control
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+        settings {
+            sendOnPageSubmit: false
+        }
+        source {
+            type: sqlQuerySingleValue
+            sqlQuery:
+                ```sql
+                SELECT pkg_apex_queries.f_get_current_logger_level FROM dual
+                ```
+        }
+        help {
+            helpText: Current active logging level for the platform.
+        }
+    )
+
+    pageItem P10_NEW_LEVEL (
+        type: selectList
+        label {
+            label: Set Log Level
+            alignment: left
+        }
+        default {
+            type: static
+            staticValue: INFORMATION
+        }
+        lov {
+            type: sharedComponent
+            lov: @logger-levels
+            displayNullValue: false
+        }
+        layout {
+            sequence: 20
+            region: @logger_control
+            slot: regionBody
+            alignment: left
+            startNewRow: false
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+        help {
+            helpText: Select the global logging level to apply across sessions.
+        }
+    )
+
+    button apply_level (
+        buttonName: APPLY_LEVEL
+        label: Apply Level
+        layout {
+            sequence: 30
+            region: @logger_control
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @/text
+            hot: true
+            templateOptions: #DEFAULT#
+        }
+        behavior {
+            action: submitPage
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    process set_logger_level (
+        name: Set Logger Level
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                pkg_apex_queries.p_set_logger_level(p_level => :P10_NEW_LEVEL);
+                :P10_CURRENT_LEVEL := pkg_apex_queries.f_get_current_logger_level;
+                ```
+        }
+        execution {
+            sequence: 10
+            point: afterSubmit
+        }
+        serverSideCondition {
+            whenButtonPressed: @apply_level
+        }
+        successMessage {
+            successMessage: Log level updated successfully.
+        }
+    )
+
+    region rds_logs (
+        name: Logs View Selector
+        type: regionDisplaySelector
+        layout {
+            sequence: 30
+            slot: body
+        }
+    )
+
+    region ig_all_logs (
+        name: All Logs
+        type: interactiveGrid
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    id,
+                    time_stamp,
+                    logger_level,
+                    level_name,
+                    scope,
+                    text,
+                    user_name,
+                    line_no,
+                    call_stack,
+                    extra,
+                    client_identifier
+                FROM pkg_apex_queries.f_system_logs('ALL')
+                ```
+        }
+        layout {
+            sequence: 40
+            slot: body
+        }
+        appearance {
+            template: @/standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--scrollBody
+            ]
+        }
+        advanced {
+            regionDisplaySelector: true
+        }
+        edit {
+            enabled: false
+        }
+        performance {
+            lazyLoading: true
+        }
+        pagination {
+            type: page
+            showTotalCount: true
+        }
+        toolbar {
+            controls: [
+                searchCol
+                searchField
+                actionsMenu
+                resetButton
+            ]
+        }
+        download {
+            formats: [
+                csv
+                html
+            ]
+        }
+
+        savedReport PRIMARY (
+            visibility: primary
+            view {
+                default: grid
+            }
+            displayColumn (
+                column: @ID
+                layout {
+                    sequence: 1
+                }
+            )
+            displayColumn (
+                column: @TIME_STAMP
+                layout {
+                    sequence: 2
+                }
+            )
+            displayColumn (
+                column: @LEVEL_NAME
+                layout {
+                    sequence: 3
+                }
+            )
+            displayColumn (
+                column: @SCOPE
+                layout {
+                    sequence: 4
+                }
+            )
+            displayColumn (
+                column: @TEXT
+                layout {
+                    sequence: 5
+                }
+            )
+            displayColumn (
+                column: @USER_NAME
+                layout {
+                    sequence: 6
+                }
+            )
+            displayColumn (
+                column: @LINE_NO
+                layout {
+                    sequence: 7
+                }
+            )
+            displayColumn (
+                column: @CALL_STACK
+                layout {
+                    sequence: 8
+                }
+            )
+            displayColumn (
+                column: @EXTRA
+                layout {
+                    sequence: 9
+                }
+            )
+            displayColumn (
+                column: @CLIENT_IDENTIFIER
+                layout {
+                    sequence: 10
+                }
+            )
+        )
+
+        column ID (
+            type: numberField
+            heading {
+                heading: ID
+            }
+            layout {
+                sequence: 1
+            }
+            source {
+                databaseColumn: ID
+                dataType: number
+                primaryKey: true
+            }
+        )
+
+        column TIME_STAMP (
+            type: textField
+            heading {
+                heading: Timestamp
+            }
+            layout {
+                sequence: 2
+            }
+            source {
+                databaseColumn: TIME_STAMP
+                dataType: timestamp
+            }
+        )
+
+        column LOGGER_LEVEL (
+            type: hidden
+            layout {
+                sequence: 11
+            }
+            source {
+                databaseColumn: LOGGER_LEVEL
+                dataType: number
+            }
+        )
+
+        column LEVEL_NAME (
+            type: textField
+            heading {
+                heading: Level
+            }
+            layout {
+                sequence: 3
+            }
+            source {
+                databaseColumn: LEVEL_NAME
+                dataType: varchar2
+            }
+        )
+
+        column SCOPE (
+            type: textField
+            heading {
+                heading: Scope
+            }
+            layout {
+                sequence: 4
+            }
+            source {
+                databaseColumn: SCOPE
+                dataType: varchar2
+            }
+        )
+
+        column TEXT (
+            type: textarea
+            heading {
+                heading: Message
+            }
+            layout {
+                sequence: 5
+            }
+            source {
+                databaseColumn: TEXT
+                dataType: varchar2
+            }
+        )
+
+        column USER_NAME (
+            type: textField
+            heading {
+                heading: User
+            }
+            layout {
+                sequence: 6
+            }
+            source {
+                databaseColumn: USER_NAME
+                dataType: varchar2
+            }
+        )
+
+        column LINE_NO (
+            type: textField
+            heading {
+                heading: Line No
+            }
+            layout {
+                sequence: 7
+            }
+            source {
+                databaseColumn: LINE_NO
+                dataType: varchar2
+            }
+        )
+
+        column CALL_STACK (
+            type: textarea
+            heading {
+                heading: Call Stack
+            }
+            layout {
+                sequence: 8
+            }
+            source {
+                databaseColumn: CALL_STACK
+                dataType: varchar2
+            }
+        )
+
+        column EXTRA (
+            type: textarea
+            heading {
+                heading: Extra Data
+            }
+            layout {
+                sequence: 9
+            }
+            source {
+                databaseColumn: EXTRA
+                dataType: clob
+            }
+        )
+
+        column CLIENT_IDENTIFIER (
+            type: textField
+            heading {
+                heading: Client ID
+            }
+            layout {
+                sequence: 10
+            }
+            source {
+                databaseColumn: CLIENT_IDENTIFIER
+                dataType: varchar2
+            }
+        )
+    )
+
+    region ig_errors (
+        name: Errors & Warnings
+        type: interactiveGrid
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    id,
+                    time_stamp,
+                    logger_level,
+                    level_name,
+                    scope,
+                    text,
+                    user_name,
+                    line_no,
+                    call_stack,
+                    extra,
+                    client_identifier
+                FROM pkg_apex_queries.f_system_logs('ERRORS')
+                ```
+        }
+        layout {
+            sequence: 50
+            slot: body
+        }
+        appearance {
+            template: @/standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--scrollBody
+            ]
+        }
+        advanced {
+            regionDisplaySelector: true
+        }
+        edit {
+            enabled: false
+        }
+        performance {
+            lazyLoading: true
+        }
+        pagination {
+            type: page
+            showTotalCount: true
+        }
+        toolbar {
+            controls: [
+                searchCol
+                searchField
+                actionsMenu
+                resetButton
+            ]
+        }
+        download {
+            formats: [
+                csv
+                html
+            ]
+        }
+
+        savedReport PRIMARY (
+            visibility: primary
+            view {
+                default: grid
+            }
+            displayColumn (
+                column: @ID
+                layout {
+                    sequence: 1
+                }
+            )
+            displayColumn (
+                column: @TIME_STAMP
+                layout {
+                    sequence: 2
+                }
+            )
+            displayColumn (
+                column: @LEVEL_NAME
+                layout {
+                    sequence: 3
+                }
+            )
+            displayColumn (
+                column: @SCOPE
+                layout {
+                    sequence: 4
+                }
+            )
+            displayColumn (
+                column: @TEXT
+                layout {
+                    sequence: 5
+                }
+            )
+            displayColumn (
+                column: @USER_NAME
+                layout {
+                    sequence: 6
+                }
+            )
+            displayColumn (
+                column: @LINE_NO
+                layout {
+                    sequence: 7
+                }
+            )
+            displayColumn (
+                column: @CALL_STACK
+                layout {
+                    sequence: 8
+                }
+            )
+            displayColumn (
+                column: @EXTRA
+                layout {
+                    sequence: 9
+                }
+            )
+            displayColumn (
+                column: @CLIENT_IDENTIFIER
+                layout {
+                    sequence: 10
+                }
+            )
+        )
+
+        column ID (
+            type: numberField
+            heading {
+                heading: ID
+            }
+            layout {
+                sequence: 1
+            }
+            source {
+                databaseColumn: ID
+                dataType: number
+                primaryKey: true
+            }
+        )
+
+        column TIME_STAMP (
+            type: textField
+            heading {
+                heading: Timestamp
+            }
+            layout {
+                sequence: 2
+            }
+            source {
+                databaseColumn: TIME_STAMP
+                dataType: timestamp
+            }
+        )
+
+        column LOGGER_LEVEL (
+            type: hidden
+            layout {
+                sequence: 11
+            }
+            source {
+                databaseColumn: LOGGER_LEVEL
+                dataType: number
+            }
+        )
+
+        column LEVEL_NAME (
+            type: textField
+            heading {
+                heading: Level
+            }
+            layout {
+                sequence: 3
+            }
+            source {
+                databaseColumn: LEVEL_NAME
+                dataType: varchar2
+            }
+        )
+
+        column SCOPE (
+            type: textField
+            heading {
+                heading: Scope
+            }
+            layout {
+                sequence: 4
+            }
+            source {
+                databaseColumn: SCOPE
+                dataType: varchar2
+            }
+        )
+
+        column TEXT (
+            type: textarea
+            heading {
+                heading: Message
+            }
+            layout {
+                sequence: 5
+            }
+            source {
+                databaseColumn: TEXT
+                dataType: varchar2
+            }
+        )
+
+        column USER_NAME (
+            type: textField
+            heading {
+                heading: User
+            }
+            layout {
+                sequence: 6
+            }
+            source {
+                databaseColumn: USER_NAME
+                dataType: varchar2
+            }
+        )
+
+        column LINE_NO (
+            type: textField
+            heading {
+                heading: Line No
+            }
+            layout {
+                sequence: 7
+            }
+            source {
+                databaseColumn: LINE_NO
+                dataType: varchar2
+            }
+        )
+
+        column CALL_STACK (
+            type: textarea
+            heading {
+                heading: Call Stack
+            }
+            layout {
+                sequence: 8
+            }
+            source {
+                databaseColumn: CALL_STACK
+                dataType: varchar2
+            }
+        )
+
+        column EXTRA (
+            type: textarea
+            heading {
+                heading: Extra Data
+            }
+            layout {
+                sequence: 9
+            }
+            source {
+                databaseColumn: EXTRA
+                dataType: clob
+            }
+        )
+
+        column CLIENT_IDENTIFIER (
+            type: textField
+            heading {
+                heading: Client ID
+            }
+            layout {
+                sequence: 10
+            }
+            source {
+                databaseColumn: CLIENT_IDENTIFIER
+                dataType: varchar2
+            }
+        )
+    )
+
+    region ig_elt (
+        name: ELT Pipeline
+        type: interactiveGrid
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT
+                    id,
+                    time_stamp,
+                    logger_level,
+                    level_name,
+                    scope,
+                    text,
+                    user_name,
+                    line_no,
+                    call_stack,
+                    extra,
+                    client_identifier
+                FROM pkg_apex_queries.f_system_logs('ELT')
+                ```
+        }
+        layout {
+            sequence: 60
+            slot: body
+        }
+        appearance {
+            template: @/standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--scrollBody
+            ]
+        }
+        advanced {
+            regionDisplaySelector: true
+        }
+        edit {
+            enabled: false
+        }
+        performance {
+            lazyLoading: true
+        }
+        pagination {
+            type: page
+            showTotalCount: true
+        }
+        toolbar {
+            controls: [
+                searchCol
+                searchField
+                actionsMenu
+                resetButton
+            ]
+        }
+        download {
+            formats: [
+                csv
+                html
+            ]
+        }
+
+        savedReport PRIMARY (
+            visibility: primary
+            view {
+                default: grid
+            }
+            displayColumn (
+                column: @ID
+                layout {
+                    sequence: 1
+                }
+            )
+            displayColumn (
+                column: @TIME_STAMP
+                layout {
+                    sequence: 2
+                }
+            )
+            displayColumn (
+                column: @LEVEL_NAME
+                layout {
+                    sequence: 3
+                }
+            )
+            displayColumn (
+                column: @SCOPE
+                layout {
+                    sequence: 4
+                }
+            )
+            displayColumn (
+                column: @TEXT
+                layout {
+                    sequence: 5
+                }
+            )
+            displayColumn (
+                column: @USER_NAME
+                layout {
+                    sequence: 6
+                }
+            )
+            displayColumn (
+                column: @LINE_NO
+                layout {
+                    sequence: 7
+                }
+            )
+            displayColumn (
+                column: @CALL_STACK
+                layout {
+                    sequence: 8
+                }
+            )
+            displayColumn (
+                column: @EXTRA
+                layout {
+                    sequence: 9
+                }
+            )
+            displayColumn (
+                column: @CLIENT_IDENTIFIER
+                layout {
+                    sequence: 10
+                }
+            )
+        )
+
+        column ID (
+            type: numberField
+            heading {
+                heading: ID
+            }
+            layout {
+                sequence: 1
+            }
+            source {
+                databaseColumn: ID
+                dataType: number
+                primaryKey: true
+            }
+        )
+
+        column TIME_STAMP (
+            type: textField
+            heading {
+                heading: Timestamp
+            }
+            layout {
+                sequence: 2
+            }
+            source {
+                databaseColumn: TIME_STAMP
+                dataType: timestamp
+            }
+        )
+
+        column LOGGER_LEVEL (
+            type: hidden
+            layout {
+                sequence: 11
+            }
+            source {
+                databaseColumn: LOGGER_LEVEL
+                dataType: number
+            }
+        )
+
+        column LEVEL_NAME (
+            type: textField
+            heading {
+                heading: Level
+            }
+            layout {
+                sequence: 3
+            }
+            source {
+                databaseColumn: LEVEL_NAME
+                dataType: varchar2
+            }
+        )
+
+        column SCOPE (
+            type: textField
+            heading {
+                heading: Scope
+            }
+            layout {
+                sequence: 4
+            }
+            source {
+                databaseColumn: SCOPE
+                dataType: varchar2
+            }
+        )
+
+        column TEXT (
+            type: textarea
+            heading {
+                heading: Message
+            }
+            layout {
+                sequence: 5
+            }
+            source {
+                databaseColumn: TEXT
+                dataType: varchar2
+            }
+        )
+
+        column USER_NAME (
+            type: textField
+            heading {
+                heading: User
+            }
+            layout {
+                sequence: 6
+            }
+            source {
+                databaseColumn: USER_NAME
+                dataType: varchar2
+            }
+        )
+
+        column LINE_NO (
+            type: textField
+            heading {
+                heading: Line No
+            }
+            layout {
+                sequence: 7
+            }
+            source {
+                databaseColumn: LINE_NO
+                dataType: varchar2
+            }
+        )
+
+        column CALL_STACK (
+            type: textarea
+            heading {
+                heading: Call Stack
+            }
+            layout {
+                sequence: 8
+            }
+            source {
+                databaseColumn: CALL_STACK
+                dataType: varchar2
+            }
+        )
+
+        column EXTRA (
+            type: textarea
+            heading {
+                heading: Extra Data
+            }
+            layout {
+                sequence: 9
+            }
+            source {
+                databaseColumn: EXTRA
+                dataType: clob
+            }
+        )
+
+        column CLIENT_IDENTIFIER (
+            type: textField
+            heading {
+                heading: Client ID
+            }
+            layout {
+                sequence: 10
+            }
+            source {
+                databaseColumn: CLIENT_IDENTIFIER
+                dataType: varchar2
+            }
+        )
+    )
+
+)

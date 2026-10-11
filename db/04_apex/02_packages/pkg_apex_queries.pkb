@@ -4,7 +4,7 @@ CREATE OR REPLACE PACKAGE BODY helios_apex.pkg_apex_queries AS
  * Purpose: SQL Macro (TABLE) queries provider for Oracle APEX application regions and charts.
  */
 
-    FUNCTION f_home_kpi_cards(
+    FUNCTION f_summary_kpi_cards(
         p_country IN VARCHAR2 DEFAULT NULL,
         p_year    IN NUMBER   DEFAULT NULL
     ) RETURN VARCHAR2 SQL_MACRO(TABLE) IS
@@ -85,9 +85,9 @@ CREATE OR REPLACE PACKAGE BODY helios_apex.pkg_apex_queries AS
               AND temporal_resolution = 'yearly'
               AND year_num = NVL(p_year, 2023)
         ]';
-    END f_home_kpi_cards;
+    END f_summary_kpi_cards;
 
-    FUNCTION f_home_fuel_mix(
+    FUNCTION f_summary_fuel_mix(
         p_country IN VARCHAR2 DEFAULT NULL,
         p_year    IN NUMBER   DEFAULT NULL
     ) RETURN VARCHAR2 SQL_MACRO(TABLE) IS
@@ -105,9 +105,9 @@ CREATE OR REPLACE PACKAGE BODY helios_apex.pkg_apex_queries AS
               AND is_aggregate_series = 0
             ORDER BY generation_twh DESC
         ]';
-    END f_home_fuel_mix;
+    END f_summary_fuel_mix;
 
-    FUNCTION f_home_generation_history(
+    FUNCTION f_summary_generation_history(
         p_country        IN VARCHAR2 DEFAULT NULL,
         p_year           IN NUMBER   DEFAULT NULL,
         p_lookback_years IN NUMBER   DEFAULT 9
@@ -125,7 +125,7 @@ CREATE OR REPLACE PACKAGE BODY helios_apex.pkg_apex_queries AS
               AND year_num BETWEEN NVL(p_year, 2023) - NVL(p_lookback_years, 9) AND NVL(p_year, 2023)
             ORDER BY year_num, generation_twh DESC
         ]';
-    END f_home_generation_history;
+    END f_summary_generation_history;
 
     FUNCTION f_global_renewables_ranking(
         p_year IN NUMBER DEFAULT NULL
@@ -168,6 +168,75 @@ CREATE OR REPLACE PACKAGE BODY helios_apex.pkg_apex_queries AS
             FETCH FIRST NVL(p_limit, 15) ROWS ONLY
         ]';
     END f_global_top_renewables;
+
+    FUNCTION f_system_logs(
+        p_filter_type IN VARCHAR2 DEFAULT 'ALL'
+    ) RETURN VARCHAR2 SQL_MACRO(TABLE) IS
+    BEGIN
+        RETURN q'[
+            SELECT
+                l.id,
+                l.time_stamp,
+                l.logger_level,
+                CASE l.logger_level
+                    WHEN 1   THEN 'OFF'
+                    WHEN 2   THEN 'PERMANENT'
+                    WHEN 4   THEN 'ERROR'
+                    WHEN 8   THEN 'WARNING'
+                    WHEN 16  THEN 'INFORMATION'
+                    WHEN 32  THEN 'TIMING'
+                    WHEN 64  THEN 'DEBUG'
+                    WHEN 128 THEN 'SYS_CONTEXT'
+                    ELSE 'LEVEL_' || TO_CHAR(l.logger_level)
+                END AS level_name,
+                l.scope,
+                l.text,
+                l.call_stack,
+                l.extra,
+                l.user_name,
+                l.client_identifier,
+                l.line_no
+            FROM logger_logs l
+            WHERE (
+                p_filter_type = 'ALL'
+                OR (p_filter_type = 'ERRORS' AND l.logger_level <= 8)
+                OR (p_filter_type = 'ELT' AND l.scope LIKE 'pkg_ember_elt%')
+            )
+            ORDER BY l.id DESC
+        ]';
+    END f_system_logs;
+
+    FUNCTION f_get_current_logger_level RETURN VARCHAR2 IS
+    BEGIN
+        RETURN logger.get_pref('LEVEL');
+    END f_get_current_logger_level;
+
+    PROCEDURE p_set_logger_level(
+        p_level IN VARCHAR2
+    ) IS
+        l_level VARCHAR2(30 CHAR) := UPPER(TRIM(p_level));
+    BEGIN
+        IF l_level = 'INFO' THEN
+            l_level := 'INFORMATION';
+        END IF;
+        logger.set_level(p_level => l_level);
+    END p_set_logger_level;
+
+    FUNCTION f_lov_logger_levels RETURN VARCHAR2 SQL_MACRO(TABLE) IS
+    BEGIN
+        RETURN q'[
+            SELECT
+                logger.convert_level_num_to_char(lvl_order) AS d,
+                logger.convert_level_num_to_char(lvl_order) AS r,
+                lvl_order                            
+            FROM (
+                  SELECT 16 AS lvl_order FROM dual UNION ALL
+                  SELECT 8 AS lvl_order FROM dual UNION ALL
+                  SELECT 4 AS lvl_order FROM dual UNION ALL
+                  SELECT 2 AS lvl_order FROM dual
+                ) 
+        ]';
+    END f_lov_logger_levels;
 
 END pkg_apex_queries;
 /
