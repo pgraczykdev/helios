@@ -170,15 +170,10 @@ The primary DAG to trigger is: `helios_elt_pipeline`.
 
 ---
 
-## 🙏 Acknowledgments
+## 📌 Acknowledgments
 
-The Helios project is built upon the invaluable contributions of two open technologies:
-
-1. **[Ember Climate (Ember Energy API)](https://ember-climate.org/)**  
-   Special thanks to the **Ember** team for providing a comprehensive, reliable, and openly accessible REST API covering global electricity generation, capacity additions, and emissions. Their commitment to data transparency plays a vital role in accelerating the global clean energy transition.
-
-2. **[OraOpenSource Logger](https://github.com/OraOpenSource/Logger)**  
-   Heartfelt appreciation to **Martin G缺rlandt**, **Tyler Muth**, and the entire **OraOpenSource** community for creating **Logger**. It remains the gold standard for PL/SQL instrumentation, telemetry, and debugging in Oracle Database. Logger provides Helios with rock-solid execution tracing, hierarchical parameter logging, and error call stack capture.
+* **[Ember Energy API](https://ember-climate.org/)** — for providing open, comprehensive electricity and emissions datasets via their REST API.
+* **[OraOpenSource Logger](https://github.com/OraOpenSource/Logger)** — for the open-source PL/SQL logging and instrumentation utility used across the database layer.
 
 ---
 
