@@ -1,8 +1,8 @@
 breadcrumb breadcrumb (
     name: Breadcrumb
 
-    entry home (
-        name: Home
+    entry summary (
+        name: Summary
         pageNumber: 1
         execution {
             sequence: 10
@@ -23,6 +23,19 @@ breadcrumb breadcrumb (
         link {
             target: {
                 page: 2
+            }
+        }
+    )
+
+    entry system-logs (
+        name: System Logs
+        pageNumber: 10
+        execution {
+            sequence: 30
+        }
+        link {
+            target: {
+                page: 10
             }
         }
     )

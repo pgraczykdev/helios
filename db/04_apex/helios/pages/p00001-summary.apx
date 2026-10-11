@@ -1,6 +1,6 @@
 page 1 (
-    name: Home
-    alias: HOME
+    name: Summary
+    alias: SUMMARY
     title: Helios
     appearance {
         pageTemplate: @/standard
@@ -15,7 +15,7 @@ page 1 (
     }
 
     region breadcrumb (
-        name: Home
+        name: Summary
         type: breadcrumb
         source {
             breadcrumb: @breadcrumb
@@ -42,7 +42,7 @@ page 1 (
             type: sqlQuery
             sqlQuery:
                 ```sql
-                SELECT * FROM pkg_apex_queries.f_home_kpi_cards(
+                SELECT * FROM pkg_apex_queries.f_summary_kpi_cards(
                     p_country => :P0_COUNTRY,
                     p_year    => :P0_YEAR
                 )
@@ -85,14 +85,14 @@ page 1 (
             htmlExpression:
                 ```html
                 {if KPI_KEY = 'ENTITY_INFO'/}
-                <span class="u-text-muted">&SUB_TEXT.</span>
+                <span>&SUB_TEXT.</span>
                 {else/}
-                {if ?YOY_VAL/}
-                <span class="{if IS_POSITIVE = 1/}u-success{else/}u-danger{endif/}">{if YOY_VAL > 0/}+{endif/}&YOY_VAL. &YOY_UNIT. YoY</span>
-                {endif/}
-                {if ?SUB_TEXT/}
-                <span class="u-text-muted">&SUB_TEXT.</span>
-                {endif/}
+                    {if ?YOY_VAL/}
+                    <span class="{if =IS_POSITIVE/}u-success-text{else/}u-danger-text{endif/}">{if YOY_VAL > 0/}+{endif/}&YOY_VAL. &YOY_UNIT. YoY</span>
+                    {endif/}
+                    {if ?SUB_TEXT/}
+                    <span>&SUB_TEXT.</span>
+                    {endif/}
                 {endif/}
                 ```
         }
@@ -136,7 +136,7 @@ page 1 (
                 ]
                 sqlQuery:
                     ```sql
-            SELECT * FROM pkg_apex_queries.f_home_fuel_mix (
+            SELECT * FROM pkg_apex_queries.f_summary_fuel_mix (
                         p_country => :P0_COUNTRY,
                         p_year    => :P0_YEAR
             )
@@ -191,7 +191,7 @@ page 1 (
                 ]
                 sqlQuery:
                     ```sql
-            SELECT * FROM pkg_apex_queries.f_home_generation_history (
+            SELECT * FROM pkg_apex_queries.f_summary_generation_history (
                         p_country => :P0_COUNTRY,
                         p_year    => :P0_YEAR
             )

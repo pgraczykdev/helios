@@ -9,7 +9,7 @@ page 0 (
         }
         default {
             type: static
-            staticValue: POL
+            staticValue: DEU
         }
         lov {
             type: sqlQuery
@@ -39,6 +39,7 @@ page 0 (
             type: currentPageNotInList
             pages: [
                 2
+                10
                 9999
             ]
         }
@@ -51,8 +52,13 @@ page 0 (
             alignment: left
         }
         default {
-            type: static
-            staticValue: 2023
+            type: sqlQuerySingleValue
+            sqlQuerySingleValue: 
+                ```sql
+                SELECT TO_CHAR(MAX(year_num)) 
+                FROM v_renewables_mix_overview
+                WHERE temporal_resolution = 'yearly'
+                ```
         }
         lov {
             type: sqlQuery
@@ -80,8 +86,11 @@ page 0 (
             width: 30
         }
         serverSideCondition {
-            type: currentPage!=page
-            page: 9999
+            type: currentPageNotInList
+            pages: [
+                10
+                9999
+            ]
         }
     )
 

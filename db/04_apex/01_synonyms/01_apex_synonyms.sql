@@ -4,3 +4,5 @@ CREATE OR REPLACE SYNONYM v_fact_capacity_analytics         FOR helios_core.v_fa
 CREATE OR REPLACE SYNONYM v_fact_carbon_intensity_analytics FOR helios_core.v_fact_carbon_intensity_analytics;
 CREATE OR REPLACE SYNONYM v_fact_demand_analytics           FOR helios_core.v_fact_demand_analytics;
 CREATE OR REPLACE SYNONYM v_fact_emissions_analytics        FOR helios_core.v_fact_emissions_analytics;
+CREATE OR REPLACE SYNONYM logger                            FOR helios_logger.logger;
+CREATE OR REPLACE SYNONYM logger_logs                       FOR helios_logger.logger_logs;
