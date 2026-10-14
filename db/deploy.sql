@@ -51,22 +51,22 @@
     @@03_core/02_tables/02_facts.sql
     
     PROMPT [03_CORE] Compiling ELT constants package specification...
-    @@03_core/03_elt/pkg_constants.pks
+    @@03_core/03_packages/pkg_constants/pkg_constants.pks
 
     PROMPT [03_CORE] Compiling ELT error package specification...
-    @@03_core/03_elt/pkg_ember_elt_err.pks
+    @@03_core/03_packages/pkg_ember_elt_err/pkg_ember_elt_err.pks
 
     PROMPT [03_CORE] Compiling ELT package specification...
-    @@03_core/03_elt/pkg_ember_elt.pks
+    @@03_core/03_packages/pkg_ember_elt/pkg_ember_elt.pks
 
     PROMPT [03_CORE] Compiling ELT utility package specification...
-    @@03_core/03_elt/pkg_ember_elt_utl.pks
+    @@03_core/03_packages/pkg_ember_elt_utl/pkg_ember_elt_utl.pks
 
     PROMPT [03_CORE] Compiling ELT utility package body...
-    @@03_core/03_elt/pkg_ember_elt_utl.pkb
+    @@03_core/03_packages/pkg_ember_elt_utl/pkg_ember_elt_utl.pkb
 
     PROMPT [03_CORE] Compiling ELT package body...
-    @@03_core/03_elt/pkg_ember_elt.pkb
+    @@03_core/03_packages/pkg_ember_elt/pkg_ember_elt.pkb
 
     PROMPT [03_CORE] 5/7 Creating SmartDB analytical views...
     @@03_core/04_views/01_analytical_views.sql
@@ -84,10 +84,10 @@
     @@04_apex/01_synonyms/01_apex_synonyms.sql
 
     PROMPT [04_APEX] Compiling SQL Macro query package specification...
-    @@04_apex/02_packages/pkg_apex_queries.pks
+    @@04_apex/02_packages/pkg_apex_queries/pkg_apex_queries.pks
 
     PROMPT [04_APEX] Compiling SQL Macro query package body...
-    @@04_apex/02_packages/pkg_apex_queries.pkb
+    @@04_apex/02_packages/pkg_apex_queries/pkg_apex_queries.pkb
 
     PROMPT ========================================================================
     PROMPT HELIOS DATABASE DEPLOYMENT: COMPLETED SUCCESSFULLY!
