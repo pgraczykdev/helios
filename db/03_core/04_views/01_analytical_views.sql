@@ -411,3 +411,35 @@ FROM em_base;
 
 COMMENT ON TABLE helios_core.v_fact_emissions_analytics IS 'SmartDB View: Power sector emissions metrics and fuel shares with
 YoY trends';
+
+
+-- ----------------------------------------------------------------------------
+-- 7. V_AI_INSIGHTS_OVERVIEW
+--  Analytical view for automated AI insights with dimension lookups & recency rank
+-- ----------------------------------------------------------------------------
+CREATE OR REPLACE FORCE VIEW helios_core.v_ai_insights_overview AS
+SELECT
+    f.insight_id,
+    f.entity_id,
+    COALESCE(e.entity_code, 'GLOBAL') AS entity_code,
+    COALESCE(e.entity_name, 'Global Summary') AS entity_name,
+    f.period_year,
+    f.insight_type,
+    f.title,
+    f.summary_text,
+    f.full_content,
+    f.model_name,
+    f.prompt_tokens,
+    f.completion_tokens,
+    f.created_at,
+    CASE
+        WHEN ROW_NUMBER() OVER (
+            PARTITION BY f.entity_id, f.period_year, f.insight_type
+            ORDER BY f.created_at DESC
+        ) = 1 THEN 'Y'
+        ELSE 'N'
+    END AS is_latest
+FROM helios_core.fact_ai_insights f
+LEFT JOIN helios_core.dim_entity e ON e.entity_id = f.entity_id;
+
+COMMENT ON TABLE helios_core.v_ai_insights_overview IS 'SmartDB View: AI executive narrative insights with denormalized entity details and recency ranking';
