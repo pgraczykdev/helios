@@ -159,18 +159,18 @@ def helios_elt_dag():
     ext_gen = task_extract_generation()
     ext_cap = task_extract_capacity()
     ext_ci = task_extract_carbon_intensity()
-    # ext_dem = task_extract_demand()
+    ext_dem = task_extract_demand()
     ext_emi = task_extract_emissions()
 
     # 2. Trigger loading into staging after extraction completes
     ld_gen = task_load_generation(extract_result=ext_gen)
     ld_cap = task_load_capacity(extract_result=ext_cap)
     ld_ci = task_load_carbon_intensity(extract_result=ext_ci)
-    # ld_dem = task_load_demand(extract_result=ext_dem)
+    ld_dem = task_load_demand(extract_result=ext_dem)
     ld_emi = task_load_emissions(extract_result=ext_emi)
 
     # 3. Trigger DWH transformation only after all 5 datasets are loaded
-    task_transform_dwh_core(load_results=[ld_gen, ld_cap, ld_ci, ld_emi])
+    task_transform_dwh_core(load_results=[ld_gen, ld_cap, ld_ci, ld_dem, ld_emi])
 
 
 helios_dag = helios_elt_dag()
