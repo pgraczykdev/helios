@@ -51,7 +51,7 @@ CREATE OR REPLACE PACKAGE BODY helios_core.pkg_ember_elt_utl AS
         l_result t_elt_result_rec;
         l_end_ts TIMESTAMP := SYSTIMESTAMP;
     BEGIN
-        l_result.status            := pkg_constants.gc_res_success;
+        l_result.status            := pkg_ember_elt_const.gc_res_success;
         l_result.rows_processed    := NVL(pi_rows_proc, 0);
         l_result.rows_merged       := NVL(pi_rows_mrg, 0);
         l_result.start_ts          := pi_start_ts;
@@ -81,7 +81,7 @@ CREATE OR REPLACE PACKAGE BODY helios_core.pkg_ember_elt_utl AS
         l_result t_elt_result_rec;
         l_end_ts TIMESTAMP := SYSTIMESTAMP;
     BEGIN
-        l_result.status            := pkg_constants.gc_res_error;
+        l_result.status            := pkg_ember_elt_const.gc_res_error;
         l_result.rows_processed    := NVL(pi_rows_proc, 0);
         l_result.rows_merged       := NVL(pi_rows_mrg, 0);
         l_result.start_ts          := pi_start_ts;

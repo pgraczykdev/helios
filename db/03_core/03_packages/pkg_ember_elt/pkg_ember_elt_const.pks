@@ -1,9 +1,9 @@
-CREATE OR REPLACE PACKAGE helios_core.pkg_constants AS
+CREATE OR REPLACE PACKAGE helios_core.pkg_ember_elt_const AS
     -- ========================================================================
     -- HELIOS DATA PLATFORM - CORE DWH LAYER
-    -- Package: helios_core.pkg_constants (Specification Only)
-    -- Description: Central repository for system-wide constants, staging table
-    --              identifiers, status flags, and custom application exceptions.
+    -- Package: helios_core.pkg_ember_elt_const (Specification Only)
+    -- Description: Central repository for ELT constants, staging table
+    --              identifiers, status flags, and fuel categories.
     -- Standards: Explicit CHAR semantics, uppercase keywords, lowercase identifiers.
     -- Documentation: PLDoc / Javadoc standard.
     -- ========================================================================
@@ -46,17 +46,5 @@ CREATE OR REPLACE PACKAGE helios_core.pkg_constants AS
     gc_cat_clean            CONSTANT VARCHAR2(30 CHAR) := 'Clean';
     gc_cat_other            CONSTANT VARCHAR2(30 CHAR) := 'Other';
 
-    -- ------------------------------------------------------------------------
-    -- 6. APPLICATION EXCEPTIONS & ERROR CODES
-    -- ------------------------------------------------------------------------
-    -- Error Codes (Oracle User-Defined Range: -20999 to -20000)
-    gc_err_code_unknown_stg CONSTANT PLS_INTEGER := -20001;
-    gc_err_msg_unknown_stg  CONSTANT VARCHAR2(100 CHAR) := 'Unknown staging table specified: ';
-
-    -- Named Exceptions coupled with PRAGMA EXCEPTION_INIT
-    e_unknown_staging_table EXCEPTION;
-    PRAGMA EXCEPTION_INIT(e_unknown_staging_table, -20001);
-
-END pkg_constants;
+END pkg_ember_elt_const;
 /
-

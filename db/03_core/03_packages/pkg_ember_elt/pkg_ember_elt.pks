@@ -9,15 +9,6 @@ CREATE OR REPLACE PACKAGE helios_core.pkg_ember_elt AS
     -- Documentation: PLDoc / Javadoc standard with @param and @return.
     -- ========================================================================
 
-    -- Global Package Constants
-    gc_status_new      CONSTANT VARCHAR2(20 CHAR) := pkg_constants.gc_status_new;
-    gc_status_proc     CONSTANT VARCHAR2(20 CHAR) := pkg_constants.gc_status_processed;
-    gc_status_err      CONSTANT VARCHAR2(20 CHAR) := pkg_constants.gc_status_error;
-
-    gc_res_success     CONSTANT VARCHAR2(20 CHAR) := pkg_constants.gc_res_success;
-    gc_res_warning     CONSTANT VARCHAR2(20 CHAR) := pkg_constants.gc_res_warning;
-    gc_res_error       CONSTANT VARCHAR2(20 CHAR) := pkg_constants.gc_res_error;
-
     -- Anchored Subtypes based on Physical Database Columns
     SUBTYPE t_entity_code         IS helios_core.dim_entity.entity_code%TYPE;
     SUBTYPE t_entity_name         IS helios_core.dim_entity.entity_name%TYPE;
