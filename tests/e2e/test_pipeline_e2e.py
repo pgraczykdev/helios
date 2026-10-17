@@ -22,20 +22,34 @@ pytestmark = pytest.mark.skipif(
 )
 
 
-def test_pipeline_extractor_e2e(tmp_path: Path) -> None:
-    """End-to-End test for the PipelineExtractor."""
+@pytest.mark.parametrize(
+    "dataset, temporal_resolution, initial_watermark",
+    [
+        (Dataset.CARBON_INTENSITY, TemporalResolution.YEARLY, "2023"),
+        (Dataset.ELECTRICITY_GENERATION, TemporalResolution.YEARLY, "2023"),
+        (Dataset.POWER_SECTOR_EMISSIONS, TemporalResolution.YEARLY, "2023"),
+        (Dataset.ELECTRICITY_DEMAND, TemporalResolution.YEARLY, "2023"),
+        (Dataset.INSTALLED_CAPACITY, TemporalResolution.MONTHLY, "2024-01-01"),
+    ],
+)
+def test_pipeline_extractor_e2e(
+    tmp_path: Path,
+    dataset: Dataset,
+    temporal_resolution: TemporalResolution,
+    initial_watermark: str,
+) -> None:
+    """End-to-End test for PipelineExtractor across all 5 Ember API datasets."""
     with EmberClient(api_key=os.getenv("EMBER_API_KEY")) as client:
-        data_lake = JsonBronzeDataLake(base_dir=tmp_path/"raw")
-        watermark_manager = JsonWatermarkManager(base_dir=tmp_path/"watermarks")
+        data_lake = JsonBronzeDataLake(base_dir=tmp_path / "raw")
+        watermark_manager = JsonWatermarkManager(base_dir=tmp_path / "watermarks")
         extractor = PipelineExtractor(
             client=client,
             lake=data_lake,
             watermark_manager=watermark_manager,
         )
-        dataset = Dataset.CARBON_INTENSITY
-        temporal_resolution = TemporalResolution.YEARLY
+
         watermark_manager.set(
-            watermark="2023",
+            watermark=initial_watermark,
             dataset=dataset,
             temporal_resolution=temporal_resolution,
         )
@@ -57,13 +71,13 @@ def test_pipeline_extractor_e2e(tmp_path: Path) -> None:
             temporal_resolution=temporal_resolution,
         )
         assert new_watermark is not None
-        assert new_watermark >= "2023"
+        assert new_watermark >= initial_watermark
 
-        # new extraction UP to date
-        result = extractor.run(
+        # Second extraction without force=True should return UP_TO_DATE
+        second_result = extractor.run(
             dataset=dataset,
             temporal_resolution=temporal_resolution,
+            force=False,
         )
-        assert result.status == ExtractionStatus.UP_TO_DATE
-        assert result.records_count == 0
-        
+        assert second_result.status == ExtractionStatus.UP_TO_DATE
+        assert second_result.records_count == 0
