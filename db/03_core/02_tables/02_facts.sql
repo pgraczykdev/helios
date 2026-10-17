@@ -157,4 +157,39 @@ COMMENT ON COLUMN helios_core.fact_emissions.share_of_emissions_pct IS 'Share of
 COMMENT ON COLUMN helios_core.fact_emissions.load_timestamp IS 'Timestamp when fact row was loaded';
 COMMENT ON COLUMN helios_core.fact_emissions.source_file IS 'Source data lake URI for lineage tracking';
 
+-- ----------------------------------------------------------------------------
+-- 6. FACT_AI_INSIGHTS (Automated Executive & Analytical Summaries)
+-- ----------------------------------------------------------------------------
+CREATE TABLE helios_core.fact_ai_insights (
+    insight_id          NUMBER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    entity_id           NUMBER,
+    period_year         NUMBER(4) NOT NULL,
+    insight_type        VARCHAR2(50 CHAR) DEFAULT ON NULL 'EXECUTIVE_SUMMARY' NOT NULL,
+    title               VARCHAR2(300 CHAR) NOT NULL,
+    summary_text        VARCHAR2(4000 CHAR) NOT NULL,
+    full_content        CLOB,
+    model_name          VARCHAR2(100 CHAR) NOT NULL,
+    prompt_tokens       NUMBER,
+    completion_tokens   NUMBER,
+    created_at          TIMESTAMP WITH TIME ZONE DEFAULT ON NULL SYSTIMESTAMP NOT NULL,
+    
+    CONSTRAINT fk_fact_ai_entity FOREIGN KEY (entity_id) REFERENCES helios_core.dim_entity (entity_id)
+);
+
+CREATE INDEX idx_fact_ai_entity_year ON helios_core.fact_ai_insights (entity_id, period_year);
+CREATE INDEX idx_fact_ai_created     ON helios_core.fact_ai_insights (created_at DESC);
+
+COMMENT ON TABLE helios_core.fact_ai_insights IS 'Fact: Narrative AI summaries, anomaly alerts and executive commentary';
+COMMENT ON COLUMN helios_core.fact_ai_insights.insight_id IS 'Surrogate identity primary key';
+COMMENT ON COLUMN helios_core.fact_ai_insights.entity_id IS 'Optional foreign key to DIM_ENTITY (NULL for global insights)';
+COMMENT ON COLUMN helios_core.fact_ai_insights.period_year IS 'Analysis period target year';
+COMMENT ON COLUMN helios_core.fact_ai_insights.insight_type IS 'Category: EXECUTIVE_SUMMARY, COUNTRY_DEEP_DIVE, ANOMALY_ALERT';
+COMMENT ON COLUMN helios_core.fact_ai_insights.title IS 'Short executive title for card headline';
+COMMENT ON COLUMN helios_core.fact_ai_insights.summary_text IS 'Key bullet points for APEX dashboard tiles';
+COMMENT ON COLUMN helios_core.fact_ai_insights.full_content IS 'Full markdown report for modal or drawer view';
+COMMENT ON COLUMN helios_core.fact_ai_insights.model_name IS 'LLM model descriptor (e.g. gemini-2.5-flash)';
+COMMENT ON COLUMN helios_core.fact_ai_insights.prompt_tokens IS 'Input tokens billed/reported by LLM';
+COMMENT ON COLUMN helios_core.fact_ai_insights.completion_tokens IS 'Output tokens billed/reported by LLM';
+COMMENT ON COLUMN helios_core.fact_ai_insights.created_at IS 'Timestamp when the insight was synthesized';
+
 
