@@ -26,20 +26,20 @@ CREATE OR REPLACE PACKAGE BODY helios_core.pkg_ember_elt AS
         logger.log(p_text => 'START', p_scope => lc_scope, p_params => l_params);
 
         CASE UPPER(TRIM(pi_table_name))
-            WHEN pkg_constants.gc_stg_generation THEN
-                SELECT COUNT(*) INTO l_count FROM stg_ember_generation WHERE stg_status = pkg_constants.gc_status_new;
-            WHEN pkg_constants.gc_stg_capacity THEN
-                SELECT COUNT(*) INTO l_count FROM stg_ember_capacity WHERE stg_status = pkg_constants.gc_status_new;
-            WHEN pkg_constants.gc_stg_carbon_intensity THEN
-                SELECT COUNT(*) INTO l_count FROM stg_ember_carbon_intensity WHERE stg_status = pkg_constants.gc_status_new;
-            WHEN pkg_constants.gc_stg_demand THEN
-                SELECT COUNT(*) INTO l_count FROM stg_ember_demand WHERE stg_status = pkg_constants.gc_status_new;
-            WHEN pkg_constants.gc_stg_emissions THEN
-                SELECT COUNT(*) INTO l_count FROM stg_ember_emissions WHERE stg_status = pkg_constants.gc_status_new;
+            WHEN pkg_ember_elt_const.gc_stg_generation THEN
+                SELECT COUNT(*) INTO l_count FROM stg_ember_generation WHERE stg_status = pkg_ember_elt_const.gc_status_new;
+            WHEN pkg_ember_elt_const.gc_stg_capacity THEN
+                SELECT COUNT(*) INTO l_count FROM stg_ember_capacity WHERE stg_status = pkg_ember_elt_const.gc_status_new;
+            WHEN pkg_ember_elt_const.gc_stg_carbon_intensity THEN
+                SELECT COUNT(*) INTO l_count FROM stg_ember_carbon_intensity WHERE stg_status = pkg_ember_elt_const.gc_status_new;
+            WHEN pkg_ember_elt_const.gc_stg_demand THEN
+                SELECT COUNT(*) INTO l_count FROM stg_ember_demand WHERE stg_status = pkg_ember_elt_const.gc_status_new;
+            WHEN pkg_ember_elt_const.gc_stg_emissions THEN
+                SELECT COUNT(*) INTO l_count FROM stg_ember_emissions WHERE stg_status = pkg_ember_elt_const.gc_status_new;
             ELSE
                 RAISE_APPLICATION_ERROR(
-                    pkg_constants.gc_err_code_unknown_stg, 
-                    pkg_constants.gc_err_msg_unknown_stg || pi_table_name
+                    pkg_ember_elt_err.gc_err_code_unknown_stg, 
+                    pkg_ember_elt_err.gc_err_msg_unknown_stg || pi_table_name
                 );
         END CASE;
 
@@ -68,7 +68,7 @@ CREATE OR REPLACE PACKAGE BODY helios_core.pkg_ember_elt AS
         logger.append_param(p_params => l_params, p_name => 'pi_commit', p_val => pi_commit);
         logger.log(p_text => 'START', p_scope => lc_scope, p_params => l_params);
 
-        l_result.status        := pkg_constants.gc_res_success;
+        l_result.status        := pkg_ember_elt_const.gc_res_success;
         l_result.start_ts      := l_start_ts;
         l_result.error_message := NULL;
 
@@ -79,15 +79,15 @@ CREATE OR REPLACE PACKAGE BODY helios_core.pkg_ember_elt AS
                 MAX(entity_code)         AS entity_code,
                 MAX(is_aggregate_entity) AS is_aggregate_entity
             FROM (
-                SELECT entity, entity_code, is_aggregate_entity FROM stg_ember_generation       WHERE stg_status = pkg_constants.gc_status_new AND entity IS NOT NULL
+                SELECT entity, entity_code, is_aggregate_entity FROM stg_ember_generation       WHERE stg_status = pkg_ember_elt_const.gc_status_new AND entity IS NOT NULL
                 UNION ALL
-                SELECT entity, entity_code, is_aggregate_entity FROM stg_ember_capacity         WHERE stg_status = pkg_constants.gc_status_new AND entity IS NOT NULL
+                SELECT entity, entity_code, is_aggregate_entity FROM stg_ember_capacity         WHERE stg_status = pkg_ember_elt_const.gc_status_new AND entity IS NOT NULL
                 UNION ALL
-                SELECT entity, entity_code, is_aggregate_entity FROM stg_ember_carbon_intensity WHERE stg_status = pkg_constants.gc_status_new AND entity IS NOT NULL
+                SELECT entity, entity_code, is_aggregate_entity FROM stg_ember_carbon_intensity WHERE stg_status = pkg_ember_elt_const.gc_status_new AND entity IS NOT NULL
                 UNION ALL
-                SELECT entity, entity_code, is_aggregate_entity FROM stg_ember_demand           WHERE stg_status = pkg_constants.gc_status_new AND entity IS NOT NULL
+                SELECT entity, entity_code, is_aggregate_entity FROM stg_ember_demand           WHERE stg_status = pkg_ember_elt_const.gc_status_new AND entity IS NOT NULL
                 UNION ALL
-                SELECT entity, entity_code, is_aggregate_entity FROM stg_ember_emissions        WHERE stg_status = pkg_constants.gc_status_new AND entity IS NOT NULL
+                SELECT entity, entity_code, is_aggregate_entity FROM stg_ember_emissions        WHERE stg_status = pkg_ember_elt_const.gc_status_new AND entity IS NOT NULL
             )
             GROUP BY entity
         ) src
@@ -133,7 +133,7 @@ CREATE OR REPLACE PACKAGE BODY helios_core.pkg_ember_elt AS
                 ROLLBACK;
             END IF;
             logger.log_error(p_text => 'DIM_ENTITY merge failed', p_scope => lc_scope, p_params => l_params);
-            l_result.status            := pkg_constants.gc_res_error;
+            l_result.status            := pkg_ember_elt_const.gc_res_error;
             l_result.rows_processed    := 0;
             l_result.rows_merged       := 0;
             l_result.end_ts            := SYSTIMESTAMP;
@@ -158,7 +158,7 @@ CREATE OR REPLACE PACKAGE BODY helios_core.pkg_ember_elt AS
         logger.append_param(p_params => l_params, p_name => 'pi_commit', p_val => pi_commit);
         logger.log(p_text => 'START', p_scope => lc_scope, p_params => l_params);
 
-        l_result.status        := pkg_constants.gc_res_success;
+        l_result.status        := pkg_ember_elt_const.gc_res_success;
         l_result.start_ts      := l_start_ts;
         l_result.error_message := NULL;
 
@@ -176,18 +176,18 @@ CREATE OR REPLACE PACKAGE BODY helios_core.pkg_ember_elt AS
                     ELSE NVL(is_aggregate_series, 0)
                     END) AS is_aggregate_series,
                 MAX(CASE 
-                    WHEN LOWER(series) IN ('solar', 'wind', 'hydro', 'bioenergy', 'other renewables', 'geothermal') THEN pkg_constants.gc_cat_renewables
-                    WHEN LOWER(series) IN ('coal', 'gas', 'other fossil') THEN pkg_constants.gc_cat_fossil
-                    WHEN LOWER(series) IN ('nuclear') THEN pkg_constants.gc_cat_nuclear
-                    WHEN LOWER(series) IN ('clean') THEN pkg_constants.gc_cat_clean
-                    ELSE pkg_constants.gc_cat_other
+                    WHEN LOWER(series) IN ('solar', 'wind', 'hydro', 'bioenergy', 'other renewables', 'geothermal') THEN pkg_ember_elt_const.gc_cat_renewables
+                    WHEN LOWER(series) IN ('coal', 'gas', 'other fossil') THEN pkg_ember_elt_const.gc_cat_fossil
+                    WHEN LOWER(series) IN ('nuclear') THEN pkg_ember_elt_const.gc_cat_nuclear
+                    WHEN LOWER(series) IN ('clean') THEN pkg_ember_elt_const.gc_cat_clean
+                    ELSE pkg_ember_elt_const.gc_cat_other
                 END) AS series_category
             FROM (
-                SELECT series, is_aggregate_series FROM stg_ember_generation WHERE stg_status = pkg_constants.gc_status_new AND series IS NOT NULL
+                SELECT series, is_aggregate_series FROM stg_ember_generation WHERE stg_status = pkg_ember_elt_const.gc_status_new AND series IS NOT NULL
                 UNION ALL
-                SELECT series, is_aggregate_series FROM stg_ember_capacity   WHERE stg_status = pkg_constants.gc_status_new AND series IS NOT NULL
+                SELECT series, is_aggregate_series FROM stg_ember_capacity   WHERE stg_status = pkg_ember_elt_const.gc_status_new AND series IS NOT NULL
                 UNION ALL
-                SELECT series, is_aggregate_series FROM stg_ember_emissions  WHERE stg_status = pkg_constants.gc_status_new AND series IS NOT NULL
+                SELECT series, is_aggregate_series FROM stg_ember_emissions  WHERE stg_status = pkg_ember_elt_const.gc_status_new AND series IS NOT NULL
             )
             GROUP BY series
         ) src
@@ -233,7 +233,7 @@ CREATE OR REPLACE PACKAGE BODY helios_core.pkg_ember_elt AS
                 ROLLBACK;
             END IF;
             logger.log_error(p_text => 'DIM_SERIES merge failed', p_scope => lc_scope, p_params => l_params);
-            l_result.status            := pkg_constants.gc_res_error;
+            l_result.status            := pkg_ember_elt_const.gc_res_error;
             l_result.rows_processed    := 0;
             l_result.rows_merged       := 0;
             l_result.end_ts            := SYSTIMESTAMP;
@@ -258,22 +258,22 @@ CREATE OR REPLACE PACKAGE BODY helios_core.pkg_ember_elt AS
         logger.append_param(p_params => l_params, p_name => 'pi_commit', p_val => pi_commit);
         logger.log(p_text => 'START', p_scope => lc_scope, p_params => l_params);
 
-        l_result.status        := pkg_constants.gc_res_success;
+        l_result.status        := pkg_ember_elt_const.gc_res_success;
         l_result.start_ts      := l_start_ts;
         l_result.error_message := NULL;
 
         MERGE INTO helios_core.dim_period tgt
         USING (
             WITH raw_periods AS (
-                SELECT temporal_resolution, raw_date FROM stg_ember_generation       WHERE stg_status = pkg_constants.gc_status_new AND raw_date IS NOT NULL
+                SELECT temporal_resolution, raw_date FROM stg_ember_generation       WHERE stg_status = pkg_ember_elt_const.gc_status_new AND raw_date IS NOT NULL
                 UNION ALL
-                SELECT temporal_resolution, raw_date FROM stg_ember_capacity         WHERE stg_status = pkg_constants.gc_status_new AND raw_date IS NOT NULL
+                SELECT temporal_resolution, raw_date FROM stg_ember_capacity         WHERE stg_status = pkg_ember_elt_const.gc_status_new AND raw_date IS NOT NULL
                 UNION ALL
-                SELECT temporal_resolution, raw_date FROM stg_ember_carbon_intensity WHERE stg_status = pkg_constants.gc_status_new AND raw_date IS NOT NULL
+                SELECT temporal_resolution, raw_date FROM stg_ember_carbon_intensity WHERE stg_status = pkg_ember_elt_const.gc_status_new AND raw_date IS NOT NULL
                 UNION ALL
-                SELECT temporal_resolution, raw_date FROM stg_ember_demand           WHERE stg_status = pkg_constants.gc_status_new AND raw_date IS NOT NULL
+                SELECT temporal_resolution, raw_date FROM stg_ember_demand           WHERE stg_status = pkg_ember_elt_const.gc_status_new AND raw_date IS NOT NULL
                 UNION ALL
-                SELECT temporal_resolution, raw_date FROM stg_ember_emissions        WHERE stg_status = pkg_constants.gc_status_new AND raw_date IS NOT NULL
+                SELECT temporal_resolution, raw_date FROM stg_ember_emissions        WHERE stg_status = pkg_ember_elt_const.gc_status_new AND raw_date IS NOT NULL
             ),
             parsed_periods AS (
                 SELECT 
@@ -294,11 +294,11 @@ CREATE OR REPLACE PACKAGE BODY helios_core.pkg_ember_elt AS
                 raw_date,
                 MAX(period_date)                                               AS period_date,
                 MAX(EXTRACT(YEAR FROM period_date))                            AS year_num,
-                MAX(CASE WHEN temporal_resolution = pkg_constants.gc_grain_monthly 
+                MAX(CASE WHEN temporal_resolution = pkg_ember_elt_const.gc_grain_monthly 
                             THEN EXTRACT(MONTH FROM period_date) ELSE NULL END)   AS month_num,
-                MAX(CASE WHEN temporal_resolution = pkg_constants.gc_grain_monthly 
+                MAX(CASE WHEN temporal_resolution = pkg_ember_elt_const.gc_grain_monthly 
                             THEN TO_NUMBER(TO_CHAR(period_date, 'Q')) ELSE NULL END) AS quarter_num,
-                MAX(CASE WHEN temporal_resolution = pkg_constants.gc_grain_yearly 
+                MAX(CASE WHEN temporal_resolution = pkg_ember_elt_const.gc_grain_yearly 
                             THEN TO_CHAR(EXTRACT(YEAR FROM period_date))
                             ELSE TO_CHAR(period_date, 'Mon YYYY', 'NLS_DATE_LANGUAGE = English') END) AS period_label
             FROM parsed_periods
@@ -347,7 +347,7 @@ CREATE OR REPLACE PACKAGE BODY helios_core.pkg_ember_elt AS
                 ROLLBACK;
             END IF;
             logger.log_error(p_text => 'DIM_PERIOD merge failed', p_scope => lc_scope, p_params => l_params);
-            l_result.status            := pkg_constants.gc_res_error;
+            l_result.status            := pkg_ember_elt_const.gc_res_error;
             l_result.rows_processed    := 0;
             l_result.rows_merged       := 0;
             l_result.end_ts            := SYSTIMESTAMP;
@@ -373,15 +373,15 @@ CREATE OR REPLACE PACKAGE BODY helios_core.pkg_ember_elt AS
         logger.append_param(p_params => l_params, p_name => 'pi_commit', p_val => pi_commit);
         logger.log(p_text => 'START', p_scope => lc_scope, p_params => l_params);
 
-        l_result.status        := pkg_constants.gc_res_success;
+        l_result.status        := pkg_ember_elt_const.gc_res_success;
         l_result.start_ts      := l_start_ts;
         l_result.error_message := NULL;
 
         -- Step 1: Merge Entities
         l_step_res := f_merge_dim_entity(pi_commit => FALSE);
-        IF l_step_res.status = pkg_constants.gc_res_error THEN
+        IF l_step_res.status = pkg_ember_elt_const.gc_res_error THEN
             ROLLBACK;
-            l_result.status            := pkg_constants.gc_res_error;
+            l_result.status            := pkg_ember_elt_const.gc_res_error;
             l_result.error_message     := l_step_res.error_message;
             l_result.end_ts            := SYSTIMESTAMP;
             l_result.execution_seconds := ROUND(EXTRACT(SECOND FROM (l_result.end_ts - l_start_ts)), 2);
@@ -391,9 +391,9 @@ CREATE OR REPLACE PACKAGE BODY helios_core.pkg_ember_elt AS
 
         -- Step 2: Merge Series
         l_step_res := f_merge_dim_series(pi_commit => FALSE);
-        IF l_step_res.status = pkg_constants.gc_res_error THEN
+        IF l_step_res.status = pkg_ember_elt_const.gc_res_error THEN
             ROLLBACK;
-            l_result.status            := pkg_constants.gc_res_error;
+            l_result.status            := pkg_ember_elt_const.gc_res_error;
             l_result.error_message     := l_step_res.error_message;
             l_result.end_ts            := SYSTIMESTAMP;
             l_result.execution_seconds := ROUND(EXTRACT(SECOND FROM (l_result.end_ts - l_start_ts)), 2);
@@ -403,9 +403,9 @@ CREATE OR REPLACE PACKAGE BODY helios_core.pkg_ember_elt AS
 
         -- Step 3: Merge Periods
         l_step_res := f_merge_dim_period(pi_commit => FALSE);
-        IF l_step_res.status = pkg_constants.gc_res_error THEN
+        IF l_step_res.status = pkg_ember_elt_const.gc_res_error THEN
             ROLLBACK;
-            l_result.status            := pkg_constants.gc_res_error;
+            l_result.status            := pkg_ember_elt_const.gc_res_error;
             l_result.error_message     := l_step_res.error_message;
             l_result.end_ts            := SYSTIMESTAMP;
             l_result.execution_seconds := ROUND(EXTRACT(SECOND FROM (l_result.end_ts - l_start_ts)), 2);
@@ -431,7 +431,7 @@ CREATE OR REPLACE PACKAGE BODY helios_core.pkg_ember_elt AS
                 ROLLBACK;
             END IF;
             logger.log_error(p_text => 'f_merge_dimensions failed', p_scope => lc_scope, p_params => l_params);
-            l_result.status            := pkg_constants.gc_res_error;
+            l_result.status            := pkg_ember_elt_const.gc_res_error;
             l_result.rows_processed    := l_total;
             l_result.rows_merged       := l_total;
             l_result.end_ts            := SYSTIMESTAMP;
@@ -469,11 +469,11 @@ CREATE OR REPLACE PACKAGE BODY helios_core.pkg_ember_elt AS
         logger.append_param(p_params => l_params, p_name => 'pi_commit', p_val => pi_commit);
         logger.log(p_text => 'START', p_scope => lc_scope, p_params => l_params);
 
-        l_result.status        := pkg_constants.gc_res_success;
+        l_result.status        := pkg_ember_elt_const.gc_res_success;
         l_result.start_ts      := l_start_ts;
         l_result.error_message := NULL;
 
-        l_processed := f_get_new_stg_count(pi_table_name => pkg_constants.gc_stg_generation);
+        l_processed := f_get_new_stg_count(pi_table_name => pkg_ember_elt_const.gc_stg_generation);
 
         IF l_processed = 0 THEN
             l_result.rows_processed    := 0;
@@ -510,7 +510,7 @@ CREATE OR REPLACE PACKAGE BODY helios_core.pkg_ember_elt AS
                 JOIN helios_core.dim_series s ON s.series_name = stg.series
                 JOIN helios_core.dim_period p ON p.temporal_resolution = stg.temporal_resolution 
                                              AND p.raw_date = stg.raw_date
-                WHERE stg.stg_status = pkg_constants.gc_status_new
+                WHERE stg.stg_status = pkg_ember_elt_const.gc_status_new
             )
             WHERE rn = 1
         ) src
@@ -546,9 +546,9 @@ CREATE OR REPLACE PACKAGE BODY helios_core.pkg_ember_elt AS
         l_merged := SQL%ROWCOUNT;
 
         UPDATE stg_ember_generation
-        SET stg_status    = pkg_constants.gc_status_processed,
+        SET stg_status    = pkg_ember_elt_const.gc_status_processed,
             error_message = NULL
-        WHERE stg_status  = pkg_constants.gc_status_new;
+        WHERE stg_status  = pkg_ember_elt_const.gc_status_new;
 
         IF pi_commit THEN
             COMMIT;
@@ -569,13 +569,13 @@ CREATE OR REPLACE PACKAGE BODY helios_core.pkg_ember_elt AS
             END IF;
             logger.log_error(p_text => 'Generation facts load failed', p_scope => lc_scope, p_params => l_params);
             UPDATE stg_ember_generation
-            SET stg_status    = pkg_constants.gc_status_error,
+            SET stg_status    = pkg_ember_elt_const.gc_status_error,
                 error_message = 'Generation facts load failed. See LOGGER_LOGS for details.'
-            WHERE stg_status  = pkg_constants.gc_status_new;
+            WHERE stg_status  = pkg_ember_elt_const.gc_status_new;
             IF pi_commit THEN
                 COMMIT;
             END IF;
-            l_result.status            := pkg_constants.gc_res_error;
+            l_result.status            := pkg_ember_elt_const.gc_res_error;
             l_result.rows_processed    := l_processed;
             l_result.rows_merged       := 0;
             l_result.end_ts            := SYSTIMESTAMP;
@@ -601,11 +601,11 @@ CREATE OR REPLACE PACKAGE BODY helios_core.pkg_ember_elt AS
         logger.append_param(p_params => l_params, p_name => 'pi_commit', p_val => pi_commit);
         logger.log(p_text => 'START', p_scope => lc_scope, p_params => l_params);
 
-        l_result.status        := pkg_constants.gc_res_success;
+        l_result.status        := pkg_ember_elt_const.gc_res_success;
         l_result.start_ts      := l_start_ts;
         l_result.error_message := NULL;
 
-        l_processed := f_get_new_stg_count(pi_table_name => pkg_constants.gc_stg_capacity);
+        l_processed := f_get_new_stg_count(pi_table_name => pkg_ember_elt_const.gc_stg_capacity);
 
         IF l_processed = 0 THEN
             l_result.rows_processed    := 0;
@@ -642,7 +642,7 @@ CREATE OR REPLACE PACKAGE BODY helios_core.pkg_ember_elt AS
                 JOIN helios_core.dim_series s ON s.series_name = stg.series
                 JOIN helios_core.dim_period p ON p.temporal_resolution = stg.temporal_resolution 
                                              AND p.raw_date = stg.raw_date
-                WHERE stg.stg_status = pkg_constants.gc_status_new
+                WHERE stg.stg_status = pkg_ember_elt_const.gc_status_new
             )
             WHERE rn = 1
         ) src
@@ -678,9 +678,9 @@ CREATE OR REPLACE PACKAGE BODY helios_core.pkg_ember_elt AS
         l_merged := SQL%ROWCOUNT;
 
         UPDATE stg_ember_capacity
-        SET stg_status    = pkg_constants.gc_status_processed,
+        SET stg_status    = pkg_ember_elt_const.gc_status_processed,
             error_message = NULL
-        WHERE stg_status  = pkg_constants.gc_status_new;
+        WHERE stg_status  = pkg_ember_elt_const.gc_status_new;
 
         IF pi_commit THEN
             COMMIT;
@@ -701,13 +701,13 @@ CREATE OR REPLACE PACKAGE BODY helios_core.pkg_ember_elt AS
             END IF;
             logger.log_error(p_text => 'Capacity facts load failed', p_scope => lc_scope, p_params => l_params);
             UPDATE stg_ember_capacity
-            SET stg_status    = pkg_constants.gc_status_error,
+            SET stg_status    = pkg_ember_elt_const.gc_status_error,
                 error_message = 'Capacity facts load failed. See LOGGER_LOGS for details.'
-            WHERE stg_status  = pkg_constants.gc_status_new;
+            WHERE stg_status  = pkg_ember_elt_const.gc_status_new;
             IF pi_commit THEN
                 COMMIT;
             END IF;
-            l_result.status            := pkg_constants.gc_res_error;
+            l_result.status            := pkg_ember_elt_const.gc_res_error;
             l_result.rows_processed    := l_processed;
             l_result.rows_merged       := 0;
             l_result.end_ts            := SYSTIMESTAMP;
@@ -733,11 +733,11 @@ CREATE OR REPLACE PACKAGE BODY helios_core.pkg_ember_elt AS
         logger.append_param(p_params => l_params, p_name => 'pi_commit', p_val => pi_commit);
         logger.log(p_text => 'START', p_scope => lc_scope, p_params => l_params);
 
-        l_result.status        := pkg_constants.gc_res_success;
+        l_result.status        := pkg_ember_elt_const.gc_res_success;
         l_result.start_ts      := l_start_ts;
         l_result.error_message := NULL;
 
-        l_processed := f_get_new_stg_count(pi_table_name => pkg_constants.gc_stg_carbon_intensity);
+        l_processed := f_get_new_stg_count(pi_table_name => pkg_ember_elt_const.gc_stg_carbon_intensity);
 
         IF l_processed = 0 THEN
             l_result.rows_processed    := 0;
@@ -769,7 +769,7 @@ CREATE OR REPLACE PACKAGE BODY helios_core.pkg_ember_elt AS
                 JOIN helios_core.dim_entity e ON e.entity_name = stg.entity
                 JOIN helios_core.dim_period p ON p.temporal_resolution = stg.temporal_resolution 
                                              AND p.raw_date = stg.raw_date
-                WHERE stg.stg_status = pkg_constants.gc_status_new
+                WHERE stg.stg_status = pkg_ember_elt_const.gc_status_new
             )
             WHERE rn = 1
         ) src
@@ -799,9 +799,9 @@ CREATE OR REPLACE PACKAGE BODY helios_core.pkg_ember_elt AS
         l_merged := SQL%ROWCOUNT;
 
         UPDATE stg_ember_carbon_intensity
-        SET stg_status    = pkg_constants.gc_status_processed,
+        SET stg_status    = pkg_ember_elt_const.gc_status_processed,
             error_message = NULL
-        WHERE stg_status  = pkg_constants.gc_status_new;
+        WHERE stg_status  = pkg_ember_elt_const.gc_status_new;
 
         IF pi_commit THEN
             COMMIT;
@@ -822,13 +822,13 @@ CREATE OR REPLACE PACKAGE BODY helios_core.pkg_ember_elt AS
             END IF;
             logger.log_error(p_text => 'Carbon intensity facts load failed', p_scope => lc_scope, p_params => l_params);
             UPDATE stg_ember_carbon_intensity
-            SET stg_status    = pkg_constants.gc_status_error,
+            SET stg_status    = pkg_ember_elt_const.gc_status_error,
                 error_message = 'Carbon intensity facts load failed. See LOGGER_LOGS for details.'
-            WHERE stg_status  = pkg_constants.gc_status_new;
+            WHERE stg_status  = pkg_ember_elt_const.gc_status_new;
             IF pi_commit THEN
                 COMMIT;
             END IF;
-            l_result.status            := pkg_constants.gc_res_error;
+            l_result.status            := pkg_ember_elt_const.gc_res_error;
             l_result.rows_processed    := l_processed;
             l_result.rows_merged       := 0;
             l_result.end_ts            := SYSTIMESTAMP;
@@ -854,11 +854,11 @@ CREATE OR REPLACE PACKAGE BODY helios_core.pkg_ember_elt AS
         logger.append_param(p_params => l_params, p_name => 'pi_commit', p_val => pi_commit);
         logger.log(p_text => 'START', p_scope => lc_scope, p_params => l_params);
 
-        l_result.status        := pkg_constants.gc_res_success;
+        l_result.status        := pkg_ember_elt_const.gc_res_success;
         l_result.start_ts      := l_start_ts;
         l_result.error_message := NULL;
 
-        l_processed := f_get_new_stg_count(pi_table_name => pkg_constants.gc_stg_demand);
+        l_processed := f_get_new_stg_count(pi_table_name => pkg_ember_elt_const.gc_stg_demand);
 
         IF l_processed = 0 THEN
             l_result.rows_processed    := 0;
@@ -892,7 +892,7 @@ CREATE OR REPLACE PACKAGE BODY helios_core.pkg_ember_elt AS
                 JOIN helios_core.dim_entity e ON e.entity_name = stg.entity
                 JOIN helios_core.dim_period p ON p.temporal_resolution = stg.temporal_resolution 
                                              AND p.raw_date = stg.raw_date
-                WHERE stg.stg_status = pkg_constants.gc_status_new
+                WHERE stg.stg_status = pkg_ember_elt_const.gc_status_new
             )
             WHERE rn = 1
         ) src
@@ -925,9 +925,9 @@ CREATE OR REPLACE PACKAGE BODY helios_core.pkg_ember_elt AS
         l_merged := SQL%ROWCOUNT;
 
         UPDATE stg_ember_demand
-        SET stg_status    = pkg_constants.gc_status_processed,
+        SET stg_status    = pkg_ember_elt_const.gc_status_processed,
             error_message = NULL
-        WHERE stg_status  = pkg_constants.gc_status_new;
+        WHERE stg_status  = pkg_ember_elt_const.gc_status_new;
 
         IF pi_commit THEN
             COMMIT;
@@ -948,13 +948,13 @@ CREATE OR REPLACE PACKAGE BODY helios_core.pkg_ember_elt AS
             END IF;
             logger.log_error(p_text => 'Demand facts load failed', p_scope => lc_scope, p_params => l_params);
             UPDATE stg_ember_demand
-            SET stg_status    = pkg_constants.gc_status_error,
+            SET stg_status    = pkg_ember_elt_const.gc_status_error,
                 error_message = 'Demand facts load failed. See LOGGER_LOGS for details.'
-            WHERE stg_status  = pkg_constants.gc_status_new;
+            WHERE stg_status  = pkg_ember_elt_const.gc_status_new;
             IF pi_commit THEN
                 COMMIT;
             END IF;
-            l_result.status            := pkg_constants.gc_res_error;
+            l_result.status            := pkg_ember_elt_const.gc_res_error;
             l_result.rows_processed    := l_processed;
             l_result.rows_merged       := 0;
             l_result.end_ts            := SYSTIMESTAMP;
@@ -980,11 +980,11 @@ CREATE OR REPLACE PACKAGE BODY helios_core.pkg_ember_elt AS
         logger.append_param(p_params => l_params, p_name => 'pi_commit', p_val => pi_commit);
         logger.log(p_text => 'START', p_scope => lc_scope, p_params => l_params);
 
-        l_result.status        := pkg_constants.gc_res_success;
+        l_result.status        := pkg_ember_elt_const.gc_res_success;
         l_result.start_ts      := l_start_ts;
         l_result.error_message := NULL;
 
-        l_processed := f_get_new_stg_count(pi_table_name => pkg_constants.gc_stg_emissions);
+        l_processed := f_get_new_stg_count(pi_table_name => pkg_ember_elt_const.gc_stg_emissions);
 
         IF l_processed = 0 THEN
             l_result.rows_processed    := 0;
@@ -1021,7 +1021,7 @@ CREATE OR REPLACE PACKAGE BODY helios_core.pkg_ember_elt AS
                 JOIN helios_core.dim_series s ON s.series_name = stg.series
                 JOIN helios_core.dim_period p ON p.temporal_resolution = stg.temporal_resolution 
                                              AND p.raw_date = stg.raw_date
-                WHERE stg.stg_status = pkg_constants.gc_status_new
+                WHERE stg.stg_status = pkg_ember_elt_const.gc_status_new
             )
             WHERE rn = 1
         ) src
@@ -1057,9 +1057,9 @@ CREATE OR REPLACE PACKAGE BODY helios_core.pkg_ember_elt AS
         l_merged := SQL%ROWCOUNT;
 
         UPDATE stg_ember_emissions
-        SET stg_status    = pkg_constants.gc_status_processed,
+        SET stg_status    = pkg_ember_elt_const.gc_status_processed,
             error_message = NULL
-        WHERE stg_status  = pkg_constants.gc_status_new;
+        WHERE stg_status  = pkg_ember_elt_const.gc_status_new;
 
         IF pi_commit THEN
             COMMIT;
@@ -1080,13 +1080,13 @@ CREATE OR REPLACE PACKAGE BODY helios_core.pkg_ember_elt AS
             END IF;
             logger.log_error(p_text => 'Emissions facts load failed', p_scope => lc_scope, p_params => l_params);
             UPDATE stg_ember_emissions
-            SET stg_status    = pkg_constants.gc_status_error,
+            SET stg_status    = pkg_ember_elt_const.gc_status_error,
                 error_message = 'Emissions facts load failed. See LOGGER_LOGS for details.'
-            WHERE stg_status  = pkg_constants.gc_status_new;
+            WHERE stg_status  = pkg_ember_elt_const.gc_status_new;
             IF pi_commit THEN
                 COMMIT;
             END IF;
-            l_result.status            := pkg_constants.gc_res_error;
+            l_result.status            := pkg_ember_elt_const.gc_res_error;
             l_result.rows_processed    := l_processed;
             l_result.rows_merged       := 0;
             l_result.end_ts            := SYSTIMESTAMP;
@@ -1116,7 +1116,7 @@ CREATE OR REPLACE PACKAGE BODY helios_core.pkg_ember_elt AS
 
         -- Step 7.1: Merge Dimensions
         l_step_res := f_merge_dimensions(pi_commit => pi_commit);
-        IF l_step_res.status = pkg_constants.gc_res_error THEN
+        IF l_step_res.status = pkg_ember_elt_const.gc_res_error THEN
             l_last_error := l_step_res.error_message;
             RAISE pkg_ember_elt_err.e_dimensions_failed;
         END IF;
@@ -1124,7 +1124,7 @@ CREATE OR REPLACE PACKAGE BODY helios_core.pkg_ember_elt AS
 
         -- Step 7.2: Load Generation Facts
         l_step_res := f_load_generation(pi_commit => pi_commit);
-        IF l_step_res.status = pkg_constants.gc_res_error THEN
+        IF l_step_res.status = pkg_ember_elt_const.gc_res_error THEN
             l_last_error := l_step_res.error_message;
             RAISE pkg_ember_elt_err.e_generation_failed;
         END IF;
@@ -1133,7 +1133,7 @@ CREATE OR REPLACE PACKAGE BODY helios_core.pkg_ember_elt AS
 
         -- Step 7.3: Load Capacity Facts
         l_step_res := f_load_capacity(pi_commit => pi_commit);
-        IF l_step_res.status = pkg_constants.gc_res_error THEN
+        IF l_step_res.status = pkg_ember_elt_const.gc_res_error THEN
             l_last_error := l_step_res.error_message;
             RAISE pkg_ember_elt_err.e_capacity_failed;
         END IF;
@@ -1142,7 +1142,7 @@ CREATE OR REPLACE PACKAGE BODY helios_core.pkg_ember_elt AS
 
         -- Step 7.4: Load Carbon Intensity Facts
         l_step_res := f_load_carbon_intensity(pi_commit => pi_commit);
-        IF l_step_res.status = pkg_constants.gc_res_error THEN
+        IF l_step_res.status = pkg_ember_elt_const.gc_res_error THEN
             l_last_error := l_step_res.error_message;
             RAISE pkg_ember_elt_err.e_carbon_intensity_failed;
         END IF;
@@ -1151,7 +1151,7 @@ CREATE OR REPLACE PACKAGE BODY helios_core.pkg_ember_elt AS
 
         -- Step 7.5: Load Demand Facts
         l_step_res := f_load_demand(pi_commit => pi_commit);
-        IF l_step_res.status = pkg_constants.gc_res_error THEN
+        IF l_step_res.status = pkg_ember_elt_const.gc_res_error THEN
             l_last_error := l_step_res.error_message;
             RAISE pkg_ember_elt_err.e_demand_failed;
         END IF;
@@ -1160,7 +1160,7 @@ CREATE OR REPLACE PACKAGE BODY helios_core.pkg_ember_elt AS
 
         -- Step 7.6: Load Emissions Facts
         l_step_res := f_load_emissions(pi_commit => pi_commit);
-        IF l_step_res.status = pkg_constants.gc_res_error THEN
+        IF l_step_res.status = pkg_ember_elt_const.gc_res_error THEN
             l_last_error := l_step_res.error_message;
             RAISE pkg_ember_elt_err.e_emissions_failed;
         END IF;
@@ -1285,7 +1285,7 @@ CREATE OR REPLACE PACKAGE BODY helios_core.pkg_ember_elt AS
 
         l_result := f_load_all(pi_commit => pi_commit);
 
-        IF l_result.status = pkg_constants.gc_res_error THEN
+        IF l_result.status = pkg_ember_elt_const.gc_res_error THEN
             logger.log_error(p_text => 'Master ELT finished with errors: ' || l_result.error_message, p_scope => lc_scope, p_params => l_params);
         ELSE
             logger.log_info(p_text => 'Master ELT finished successfully. Merged: ' || l_result.rows_merged, p_scope => lc_scope);
