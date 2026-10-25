@@ -146,7 +146,8 @@ python -m venv venv
 # Linux/macOS:
 source venv/bin/activate
 
-pip install -e .
+# Install package in editable mode with development dependencies (pytest):
+pip install -e ".[dev]"
 ```
 
 ### 4. Running Tests
