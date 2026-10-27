@@ -40,8 +40,8 @@ class OracleDatabaseConnector:
         self.user = user or os.getenv("ORACLE_ADMIN_USER")
         self.password = password or os.getenv("ORACLE_ADMIN_PASSWORD")
         self.dsn = dsn or os.getenv("ORACLE_DSN")
-        self.wallet_dir = wallet_dir or os.getenv("ORACLE_WALLET_DIR")
-        self.wallet_password = wallet_password or os.getenv("ORACLE_WALLET_PASSWORD")
+        self.wallet_dir = wallet_dir or os.getenv("ORACLE_WALLET_DIR") or None
+        self.wallet_password = wallet_password or (os.getenv("ORACLE_WALLET_PASSWORD") if self.wallet_dir else None)
 
         self.min_connections = min_connections
         self.max_connections = max_connections
@@ -87,4 +87,5 @@ class OracleDatabaseConnector:
             self._pool.close()
             self._pool = None
             logger.info("Oracle connection pool closed.")
+
 

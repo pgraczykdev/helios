@@ -1,51 +1,84 @@
+DECLARE
+    l_tablespace VARCHAR2(30 CHAR);
+
+    PROCEDURE p_ensure_user (
+        pi_username VARCHAR2,
+        pi_password VARCHAR2,
+        pi_tablespace VARCHAR2
+    )
+    AS
+        l_user_exists SIMPLE_INTEGER := 0;
+    BEGIN
+        SELECT 
+            CASE WHEN EXISTS(
+                SELECT 1 FROM dba_users WHERE username = UPPER(pi_username)
+            ) THEN 1 ELSE 0 END
+        INTO l_user_exists
+        FROM dual;
+
+        IF l_user_exists = 0 THEN
+            EXECUTE IMMEDIATE 'CREATE USER ' || pi_username
+                               || ' IDENTIFIED BY "' || pi_password || '"'
+                               || ' DEFAULT TABLESPACE ' || pi_tablespace
+                               || ' QUOTA UNLIMITED ON ' || pi_tablespace;
+        ELSE
+            EXECUTE IMMEDIATE 'ALTER USER ' || pi_username
+                            || ' IDENTIFIED BY "' || pi_password || '"'
+                            || ' DEFAULT TABLESPACE ' || pi_tablespace
+                            || ' QUOTA UNLIMITED ON ' || pi_tablespace;
+        END IF;
+    END p_ensure_user;
+
+BEGIN
+
+    SELECT CASE WHEN EXISTS(
+        SELECT 1 FROM dba_tablespaces WHERE tablespace_name = UPPER('DATA')
+    ) THEN 'DATA' ELSE 'USERS' END
+    INTO l_tablespace
+    FROM dual;
+
+    p_ensure_user(pi_username => 'helios_logger', pi_password => '<YOUR_SECURE_PASSWORD_HERE>', pi_tablespace => l_tablespace);
+    p_ensure_user(pi_username => 'helios_stg', pi_password => '<YOUR_SECURE_PASSWORD_HERE>', pi_tablespace => l_tablespace);
+    p_ensure_user(pi_username => 'helios_core', pi_password => '<YOUR_SECURE_PASSWORD_HERE>', pi_tablespace => l_tablespace);
+    p_ensure_user(pi_username => 'helios_apex', pi_password => '<YOUR_SECURE_PASSWORD_HERE>', pi_tablespace => l_tablespace);  
+END; 
+/
 -- ----------------------------------------------------------------------------
--- 0. LOGGING INFRASTRUCTURE (OraOpenSource Logger)
+-- 1. LOGGING INFRASTRUCTURE PRIVILEGES (HELIOS_LOGGER)
 -- ----------------------------------------------------------------------------
-CREATE USER helios_logger IDENTIFIED BY "<YOUR_SECURE_PASSWORD_HERE>";
-
-ALTER USER helios_logger DEFAULT TABLESPACE data QUOTA UNLIMITED ON data;
-
-GRANT CREATE SESSION TO helios_logger;
-GRANT DWROLE TO helios_logger;
-GRANT CREATE TABLE, CREATE VIEW, CREATE PROCEDURE, CREATE SEQUENCE, CREATE TRIGGER, CREATE JOB TO helios_logger;
-GRANT CREATE ANY CONTEXT TO helios_logger;
-
-
--- ----------------------------------------------------------------------------
--- 1. STAGING LAYER (Ingestion / Python Loader)
--- ----------------------------------------------------------------------------
--- Replace the placeholder password with your secure password.
--- Password policy: 12-30 characters, >=1 uppercase, >=1 lowercase, >=1 number.
-CREATE USER helios_stg IDENTIFIED BY "<YOUR_SECURE_PASSWORD_HERE>";
-
-
-ALTER USER helios_stg DEFAULT TABLESPACE data QUOTA UNLIMITED ON data;
-
-
-GRANT CREATE SESSION TO helios_stg;
-GRANT CREATE TABLE TO helios_stg;
-
+GRANT CREATE SESSION,
+        CREATE TABLE,
+        CREATE VIEW,
+        CREATE PROCEDURE,
+        CREATE SEQUENCE,
+        CREATE TRIGGER,
+        CREATE JOB,
+        CREATE ANY CONTEXT
+    TO helios_logger;
 
 -- ----------------------------------------------------------------------------
--- 2. CORE DWH LAYER (SmartDB / Star Schema / TAPI / ETL Packages)
+-- 2. STAGING LAYER PRIVILEGES (HELIOS_STG)
 -- ----------------------------------------------------------------------------
-CREATE USER helios_core IDENTIFIED BY "<YOUR_SECURE_PASSWORD_HERE>";
-
-ALTER USER helios_core DEFAULT TABLESPACE data QUOTA UNLIMITED ON data;
-
-GRANT CREATE SESSION TO helios_core;
-GRANT DWROLE TO helios_core;
-GRANT CREATE SYNONYM TO helios_core;
-
+GRANT CREATE SESSION,
+        CREATE TABLE
+    TO helios_stg;
 
 -- ----------------------------------------------------------------------------
--- 3. PRESENTATION LAYER (Oracle APEX Application / Reporting Views)
+-- 3. CORE DWH LAYER PRIVILEGES (HELIOS_CORE)
 -- ----------------------------------------------------------------------------
-CREATE USER helios_apex IDENTIFIED BY "<YOUR_SECURE_PASSWORD_HERE>";
+GRANT CREATE SESSION,
+        CREATE TABLE,
+        CREATE SEQUENCE,
+        CREATE VIEW,
+        CREATE PROCEDURE,
+        CREATE SYNONYM
+    TO helios_core;
 
-ALTER USER helios_apex DEFAULT TABLESPACE data QUOTA UNLIMITED ON data;
-
-GRANT CREATE SESSION TO helios_apex;
-GRANT DWROLE TO helios_apex;
-GRANT CREATE VIEW TO helios_apex;
-GRANT CREATE SYNONYM TO helios_apex;
+-- ----------------------------------------------------------------------------
+-- 4. PRESENTATION LAYER PRIVILEGES (HELIOS_APEX)
+-- ----------------------------------------------------------------------------
+GRANT CREATE SESSION,
+        CREATE VIEW,
+        CREATE PROCEDURE,
+        CREATE SYNONYM
+    TO helios_apex;
