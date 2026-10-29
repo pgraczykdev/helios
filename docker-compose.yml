@@ -1,5 +1,3 @@
-version: '3.8'
-
 x-airflow-common: &airflow-common
   build: .
   image: helios-airflow:latest
@@ -19,7 +17,7 @@ x-airflow-common: &airflow-common
     HELIOS_STG_USER: ${HELIOS_STAGING_USER:-HELIOS_STG}
     HELIOS_STG_PASSWORD: ${HELIOS_STAGING_PASSWORD:-}
     # Container-specific path to the Oracle Wallet directory
-    ORACLE_WALLET_DIR: /opt/airflow/wallet/wallet_ADW
+    ORACLE_WALLET_DIR: ${ORACLE_WALLET_DIR:-}
   volumes:
     - ./dags:/opt/airflow/dags
     - ./src:/opt/airflow/src
@@ -27,6 +25,8 @@ x-airflow-common: &airflow-common
     - ./wallet:/opt/airflow/wallet:ro
     - airflow_logs:/opt/airflow/logs
   user: "${AIRFLOW_UID:-50000}:0"
+  extra_hosts:
+    - "host.docker.internal:host-gateway"
 
 services:
   postgres:
