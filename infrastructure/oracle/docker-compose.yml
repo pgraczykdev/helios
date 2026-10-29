@@ -1,0 +1,40 @@
+services:
+  oracle-db:
+    image: gvenzl/oracle-free:latest
+    container_name: oracle-free-db
+    hostname: oracle-db
+    ports:
+      - "1521:1521"
+    security_opt:
+      - seccomp:unconfined
+    environment:
+      ORACLE_PASSWORD: oracle
+    volumes:
+      - oracle_db_data:/opt/oracle/oradata
+    healthcheck:
+      test: ["CMD", "healthcheck.sh"]
+      interval: 15s
+      timeout: 10s
+      retries: 20
+      start_period: 40s
+    restart: unless-stopped
+
+  oracle-ords:
+    build: { context: ., dockerfile: Dockerfile.ords }
+    container_name: oracle-ords
+    depends_on:
+      oracle-db:
+        condition: service_healthy
+    ports:
+      - "8181:8080"
+    environment:
+      CONN_STRING: "oracle-db:1521/FREEPDB1"
+      ORACLE_PWD: oracle
+      ORACLE_USER_PWD: oracle
+    volumes:
+      - ords_config:/etc/ords/config
+    restart: unless-stopped
+
+volumes:
+  oracle_db_data: {}
+  ords_config: {}
