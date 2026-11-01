@@ -2,35 +2,18 @@ from datetime import datetime, timezone
 import json
 import logging
 from pathlib import Path
-from typing import Any, Protocol
+from typing import Any
 
 from helios.elt.extraction.extraction_utils import normalize_dataset_prefix
 
-
 logger = logging.getLogger(__name__)
-
-# Default base directory for raw Bronze Data Lake storage
-
-class BronzeDataLake(Protocol):
-    def get_dataset_prefix(self, dataset: str, temporal_resolution: str) -> str:
-        """Return the prefix path for the dataset and temporal resolution within the Bronze Lake."""
-        ...
-
-    def save_raw_data(
-        self,
-        data: list[dict[str, Any]] | dict[str, Any],
-        dataset: str,
-        temporal_resolution: str,
-        filename: str | None = None,
-        tag: str | None = None,
-    ) -> str | None:
-        """Save raw data to the Bronze Lake and return the file path as a string."""
-        ...
 
 
 class JsonBronzeDataLake:
     """Manager for the local Bronze Data Lake storing raw 1:1 API payloads in JSON files."""
+
     _default_json_bronze_lake_dir = Path("data/raw")
+
     def __init__(self, base_dir: Path | str = _default_json_bronze_lake_dir) -> None:
         """Initialize Bronze Lake with root raw storage directory."""
         self.base_dir = Path(base_dir)

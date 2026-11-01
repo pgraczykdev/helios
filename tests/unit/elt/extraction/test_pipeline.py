@@ -1,12 +1,12 @@
 from unittest.mock import MagicMock
 
 
-from helios.elt.extraction.pipeline import (
+from helios.elt.extraction.models import (
     Dataset,
     ExtractionStatus,
-    PipelineExtractor,
     TemporalResolution,
 )
+from helios.elt.extraction.pipeline_extractor import PipelineExtractor
 
 
 def test_pipeline_up_to_date_skips_extraction() -> None:

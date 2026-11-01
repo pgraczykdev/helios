@@ -2,8 +2,8 @@ import json
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-from helios.elt.extraction.pipeline import Dataset, TemporalResolution
-from helios.elt.load.loader import LoadStatus, LoadingResult
+from helios.elt.extraction.models import Dataset, TemporalResolution
+from helios.elt.load.models import LoadStatus, LoadingResult
 from helios.elt.load.tasks import (
     load_carbon_intensity,
     load_dataset_to_staging,

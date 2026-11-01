@@ -4,8 +4,8 @@ from dotenv import load_dotenv
 import pytest
 
 from helios.agent.insights_agent import InsightsAgent
-from helios.agent.prompts import EnergyInsightReport
-from helios.db.connector import OracleDatabaseConnector
+from helios.agent.models import EnergyInsightReport
+from helios.db import OracleDatabaseConnector
 
 load_dotenv()
 

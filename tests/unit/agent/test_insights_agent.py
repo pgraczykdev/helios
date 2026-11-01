@@ -10,8 +10,8 @@ from helios.agent.exceptions import (
     AgentServiceUnavailableError,
 )
 from helios.agent.insights_agent import InsightsAgent
-from helios.agent.prompts import EnergyInsightReport
-from helios.db.connector import DatabaseConnector
+from helios.agent.models import EnergyInsightReport
+from helios.db import DatabaseConnector
 
 
 @pytest.fixture

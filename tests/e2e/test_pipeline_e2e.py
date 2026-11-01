@@ -4,14 +4,14 @@ import pytest
 from dotenv import load_dotenv
 
 from helios.client.ember_client import EmberClient
-from helios.elt.extraction.lake import JsonBronzeDataLake
-from helios.elt.extraction.pipeline import (
+from helios.elt.extraction import (
     Dataset,
     ExtractionStatus,
+    JsonBronzeDataLake,
+    JsonWatermarkManager,
     PipelineExtractor,
     TemporalResolution,
 )
-from helios.elt.extraction.watermark import JsonWatermarkManager
 
 load_dotenv()
 

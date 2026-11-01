@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 from airflow.decorators import dag, task
 from airflow.exceptions import AirflowException
 
-from helios.elt.extraction.pipeline import ExtractionResult, ExtractionStatus
+from helios.elt.extraction.models import ExtractionResult, ExtractionStatus
 from helios.elt.extraction.tasks import (
     extract_carbon_intensity,
     extract_electricity_demand,
@@ -12,7 +12,7 @@ from helios.elt.extraction.tasks import (
     extract_installed_capacity,
     extract_power_sector_emissions,
 )
-from helios.elt.load.loader import LoadStatus, LoadingResult
+from helios.elt.load.models import LoadStatus, LoadingResult
 from helios.elt.load.tasks import (
     load_carbon_intensity,
     load_electricity_demand,
@@ -20,8 +20,8 @@ from helios.elt.load.tasks import (
     load_installed_capacity,
     load_power_sector_emissions,
 )
+from helios.elt.transform.models import TransformationResult, TransformationStatus
 from helios.elt.transform.tasks import transform_dwh_core
-from helios.elt.transform.transformer import TransformationResult, TransformationStatus
 
 logger = logging.getLogger(__name__)
 

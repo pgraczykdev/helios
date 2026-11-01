@@ -1,4 +1,4 @@
-"""Pakiet agenta AI dla platformy Helios."""
+"""AI agent package for the Helios platform."""
 from helios.agent.exceptions import (
     AgentError,
     AgentQuotaExceededError,
@@ -6,10 +6,12 @@ from helios.agent.exceptions import (
     AgentServiceUnavailableError,
 )
 from helios.agent.insights_agent import InsightsAgent
-from helios.agent.prompts import (
+from helios.agent.models import (
     EnergyInsightReport,
-    build_country_insight_prompt,
+    InsightGenerationResult,
+    InsightGenerationStatus,
 )
+from helios.agent.prompts import build_country_insight_prompt
 
 __all__ = [
     "AgentError",
@@ -17,6 +19,8 @@ __all__ = [
     "AgentResponseValidationError",
     "AgentServiceUnavailableError",
     "EnergyInsightReport",
+    "InsightGenerationResult",
+    "InsightGenerationStatus",
     "InsightsAgent",
     "build_country_insight_prompt",
 ]

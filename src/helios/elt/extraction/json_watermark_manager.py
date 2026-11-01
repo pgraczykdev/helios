@@ -2,33 +2,20 @@ from datetime import datetime, timezone
 import json
 import logging
 from pathlib import Path
-from typing import Any, Protocol
+from typing import Any
 
 from helios.elt.extraction.extraction_utils import normalize_date, normalize_dataset_prefix
 
 logger = logging.getLogger(__name__)
 
-class WatermarkManager(Protocol):
-    def get(self, dataset: str, temporal_resolution: str) -> str | None:
-        """Get the current watermark for the given dataset and temporal resolution."""
-        ...
-
-    def set(
-        self,
-        watermark: str,
-        dataset: str,
-        temporal_resolution: str,
-        records_count: int | None = None,
-    ) -> str | None:
-        """Set the watermark for the given dataset and temporal resolution."""
-        ...
 
 class JsonWatermarkManager:
     """Manager for handling watermarks stored as JSON files in a local directory."""
+
     _default_watermark_dir = "data/watermarks"
     _default_watermark_filename = "watermark.json"
 
-    def __init__(self, base_dir: Path | str = _default_watermark_dir):
+    def __init__(self, base_dir: Path | str = _default_watermark_dir) -> None:
         self.base_dir = Path(base_dir)
 
     def get(self, dataset: str, temporal_resolution: str) -> str | None:
@@ -45,7 +32,7 @@ class JsonWatermarkManager:
         except (IOError, json.JSONDecodeError) as exc:
             logger.error("Error reading watermark from %s: %s", target_dir, exc)
             return None
-       
+
     def set(
         self,
         watermark: str,
@@ -59,7 +46,10 @@ class JsonWatermarkManager:
         filepath = target_dir / self._default_watermark_filename
 
         normalized_watermark = normalize_date(date_str=watermark)
-        payload: dict[str, Any] = {"watermark": normalized_watermark, "updated_at": datetime.now(tz=timezone.utc).isoformat()}
+        payload: dict[str, Any] = {
+            "watermark": normalized_watermark,
+            "updated_at": datetime.now(tz=timezone.utc).isoformat(),
+        }
         if normalized_dataset is not None:
             payload["dataset"] = normalized_dataset
         if temporal_resolution is not None:

@@ -1,3 +1,7 @@
-from helios.db.connector import DatabaseConnector, OracleDatabaseConnector
+from helios.db.database_connector import DatabaseConnector
+from helios.db.oracle_connector import OracleDatabaseConnector
 
-__all__ = ["DatabaseConnector", "OracleDatabaseConnector"]
+__all__ = [
+    "DatabaseConnector",
+    "OracleDatabaseConnector",
+]

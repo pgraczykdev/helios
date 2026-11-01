@@ -1,7 +1,7 @@
 from unittest.mock import MagicMock
 import pytest
 
-from helios.db.connector import DatabaseConnector
+from helios.db import DatabaseConnector
 from helios.elt.transform import OracleTransformer, TransformationStatus
     
 

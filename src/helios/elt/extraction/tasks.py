@@ -1,7 +1,11 @@
 import logging
-from helios.elt.extraction.pipeline import Dataset, ExtractionResult, PipelineExtractor, TemporalResolution
-from helios.elt.extraction.lake import BronzeDataLake
-from helios.elt.extraction.watermark import WatermarkManager
+
+from helios.elt.extraction.bronze_data_lake import BronzeDataLake
+from helios.elt.extraction.models.dataset import Dataset
+from helios.elt.extraction.models.extraction_result import ExtractionResult
+from helios.elt.extraction.models.temporal_resolution import TemporalResolution
+from helios.elt.extraction.pipeline_extractor import PipelineExtractor
+from helios.elt.extraction.watermark_manager import WatermarkManager
 
 
 def extract_electricity_generation(
@@ -17,8 +21,8 @@ def extract_electricity_generation(
         temporal_resolution=temporal_resolution,
         force=force,
     )
-    
-    
+
+
 def extract_carbon_intensity(
     temporal_resolution: TemporalResolution | str = TemporalResolution.YEARLY,
     force: bool = False,
@@ -33,7 +37,7 @@ def extract_carbon_intensity(
         force=force,
     )
 
-    
+
 def extract_installed_capacity(
     force: bool = False,
     lake: BronzeDataLake | None = None,
@@ -47,7 +51,7 @@ def extract_installed_capacity(
         force=force,
     )
 
-    
+
 def extract_electricity_demand(
     temporal_resolution: TemporalResolution | str = TemporalResolution.YEARLY,
     force: bool = False,
@@ -62,7 +66,7 @@ def extract_electricity_demand(
         force=force,
     )
 
-    
+
 def extract_power_sector_emissions(
     temporal_resolution: TemporalResolution | str = TemporalResolution.YEARLY,
     force: bool = False,
@@ -77,7 +81,7 @@ def extract_power_sector_emissions(
         force=force,
     )
 
-    
+
 if __name__ == "__main__":
     logging.basicConfig(
         level=logging.INFO,
@@ -86,6 +90,6 @@ if __name__ == "__main__":
     res = extract_carbon_intensity(
         temporal_resolution=TemporalResolution.YEARLY,
         lake=None,
-        watermark_manager=None
+        watermark_manager=None,
     )
     print(f"Status: {res.status} | Records: {res.records_count} | Watermark: {res.new_watermark}")

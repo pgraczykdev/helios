@@ -3,11 +3,14 @@ import logging
 import os
 from pathlib import Path
 
-from helios.db.connector import OracleDatabaseConnector
-from helios.elt.extraction.lake import JsonBronzeDataLake
-from helios.elt.extraction.pipeline import Dataset, TemporalResolution
-from helios.elt.load.loader import LoadStatus, LoadingResult, StagingLoader
-from helios.elt.load.mapper import LoadingMapperFactory
+from helios.db.oracle_connector import OracleDatabaseConnector
+from helios.elt.extraction.json_bronze_data_lake import JsonBronzeDataLake
+from helios.elt.extraction.models.dataset import Dataset
+from helios.elt.extraction.models.temporal_resolution import TemporalResolution
+from helios.elt.load.mappers.loading_mapper_factory import LoadingMapperFactory
+from helios.elt.load.models.load_status import LoadStatus
+from helios.elt.load.models.loading_result import LoadingResult
+from helios.elt.load.staging_loader import StagingLoader
 
 logger = logging.getLogger(__name__)
 

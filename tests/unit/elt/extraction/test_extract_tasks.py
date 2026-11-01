@@ -2,7 +2,7 @@ from typing import Callable
 from unittest.mock import MagicMock, patch
 import pytest
 
-from helios.elt.extraction.pipeline import (
+from helios.elt.extraction.models import (
     Dataset,
     ExtractionResult,
     TemporalResolution,

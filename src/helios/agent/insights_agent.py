@@ -4,9 +4,9 @@ import logging
 import os
 import time
 from typing import Any
+
 from google import genai
-from google.genai import errors
-from google.genai import types
+from google.genai import errors, types
 
 from helios.agent.exceptions import (
     AgentError,
@@ -14,10 +14,8 @@ from helios.agent.exceptions import (
     AgentResponseValidationError,
     AgentServiceUnavailableError,
 )
-from helios.agent.prompts import (
-    EnergyInsightReport,
-    build_country_insight_prompt,
-)
+from helios.agent.models.energy_insight_report import EnergyInsightReport
+from helios.agent.prompts import build_country_insight_prompt
 from helios.db import DatabaseConnector
 
 logger = logging.getLogger(__name__)
