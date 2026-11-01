@@ -2,7 +2,7 @@ import logging
 from datetime import datetime, timedelta
 
 from airflow.decorators import dag, task
-from airflow.exceptions import AirflowException
+from airflow.exceptions import AirflowException, AirflowSkipException
 
 from helios.elt.extraction.models import ExtractionResult, ExtractionStatus
 from helios.elt.extraction.tasks import (
@@ -22,6 +22,9 @@ from helios.elt.load.tasks import (
 )
 from helios.elt.transform.models import TransformationResult, TransformationStatus
 from helios.elt.transform.tasks import transform_dwh_core
+
+from helios.agent.models import InsightGenerationResult, InsightGenerationStatus
+from helios.agent.tasks import generate_insights
 
 logger = logging.getLogger(__name__)
 
@@ -153,6 +156,24 @@ def helios_elt_dag():
         return res
 
     # =========================================================================
+    # Step 4: AI Insight Generation
+    # =========================================================================
+    @task
+    def task_generate_insights(transformation_result: TransformationResult | None = None) -> InsightGenerationResult:
+        """Generate AI insights based on the DWH transformation result (best-effort)."""
+        res = generate_insights(transformation_result=transformation_result)
+        if res.status in (InsightGenerationStatus.FAILED, InsightGenerationStatus.SKIPPED):
+            logger.warning(
+                "Skipping AI insights task (status=%s, processed=%d, failed=%d): %s",
+                res.status,
+                res.countries_processed,
+                res.countries_failed,
+                res.error_message,
+            )
+            raise AirflowSkipException(f"AI insight generation skipped/degraded: {res.error_message}")
+        return res
+
+    # =========================================================================
     # Pipeline Dependencies Definition
     # =========================================================================
     # 1. Trigger extraction
@@ -170,7 +191,10 @@ def helios_elt_dag():
     ld_emi = task_load_emissions(extract_result=ext_emi)
 
     # 3. Trigger DWH transformation only after all 5 datasets are loaded
-    task_transform_dwh_core(load_results=[ld_gen, ld_cap, ld_ci, ld_dem, ld_emi])
+    tf_result = task_transform_dwh_core(load_results=[ld_gen, ld_cap, ld_ci, ld_dem, ld_emi])
+
+    # 4. Trigger AI insight generation only after DWH transformation completes
+    task_generate_insights(transformation_result=tf_result)
 
 
 helios_dag = helios_elt_dag()
