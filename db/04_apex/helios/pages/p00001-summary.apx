@@ -74,7 +74,7 @@ page 1 (
             htmlExpression:
                 ```html
                 {if KPI_KEY = 'ENTITY_INFO'/}
-                Rok &METRIC_VAL.
+                Year &METRIC_VAL.
                 {else/}
                 &METRIC_VAL. &METRIC_UNIT.
                 {endif/}

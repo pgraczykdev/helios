@@ -1,4 +1,4 @@
 class AgentError(Exception):
-    """Bazowy wyjątek domenowy agenta AI."""
+    """Base domain exception for the AI agent."""
 
     pass

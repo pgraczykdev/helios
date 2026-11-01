@@ -20,7 +20,7 @@ def test_save_raw_data_default_filename_and_content(tmp_path: Path) -> None:
     assert saved_file.name.startswith("carbon_intensity_yearly_")
     assert saved_file.suffix == ".json"
 
-    # Weryfikacja zawartości
+    # Verify file content
     with open(file=saved_file, mode="r", encoding="utf-8") as f:
         data = json.load(fp=f)
         assert data == records
@@ -63,7 +63,7 @@ def test_save_raw_data_with_custom_filename(tmp_path: Path) -> None:
 def test_save_raw_data_handles_io_error(tmp_path: Path) -> None:
     lake = JsonBronzeDataLake(base_dir=tmp_path)
 
-    # Symulujemy awarię zapisu (np. brak uprawnień lub zapełniony dysk)
+    # Simulate write failure (e.g., permission denied or disk full)
     with patch("builtins.open", side_effect=IOError("Disk full")):
         result = lake.save_raw_data(
             data=[{"test": 1}],
