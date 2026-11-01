@@ -2,6 +2,6 @@ from helios.agent.exceptions.agent_error import AgentError
 
 
 class AgentResponseValidationError(AgentError):
-    """Wyjątek rzucany przy pustej lub niepoprawnej odpowiedzi modelu."""
+    """Exception raised when the model returns an empty or unparsable response."""
 
     pass
