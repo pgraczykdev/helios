@@ -1,9 +1,10 @@
 import logging
 import os
 
-from helios.db.connector import OracleDatabaseConnector
-from helios.elt.load.loader import LoadingResult
-from helios.elt.transform.transformer import OracleTransformer, TransformationResult
+from helios.db.oracle_connector import OracleDatabaseConnector
+from helios.elt.load.models.loading_result import LoadingResult
+from helios.elt.transform.models.transformation_result import TransformationResult
+from helios.elt.transform.oracle_transformer import OracleTransformer
 
 logger = logging.getLogger(__name__)
 

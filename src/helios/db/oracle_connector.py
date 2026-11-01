@@ -1,30 +1,18 @@
-
 from contextlib import contextmanager
-from typing import Any, Generator, Protocol, runtime_checkable
-import oracledb
-import os
 import logging
+import os
+from typing import Generator
+
 from dotenv import load_dotenv
+import oracledb
 
 load_dotenv()
 
 logger = logging.getLogger(__name__)
 
 
-@runtime_checkable
-class DatabaseConnector(Protocol):
-
-    @contextmanager
-    def acquire_connection(self) -> Generator[Any, None, None]:
-        """Acquire a connection from the database connection pool and yield it."""
-        ...
-
-    def close_pool(self) -> None:
-        """Close the database connection pool."""
-        ...
-
-
 class OracleDatabaseConnector:
+    """Oracle database connection pool manager supporting both mTLS Wallet and TCP."""
 
     def __init__(
         self,
@@ -87,5 +75,3 @@ class OracleDatabaseConnector:
             self._pool.close()
             self._pool = None
             logger.info("Oracle connection pool closed.")
-
-

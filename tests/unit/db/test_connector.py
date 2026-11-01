@@ -1,6 +1,6 @@
 import pytest
 import unittest.mock
-from helios.db.connector import OracleDatabaseConnector
+from helios.db.oracle_connector import OracleDatabaseConnector
 
 def test_connector_with_wallet(monkeypatch: pytest.MonkeyPatch) -> None:
     """Test that the connector behaves correctly when an Oracle wallet is configured."""
@@ -13,7 +13,7 @@ def test_connector_with_wallet(monkeypatch: pytest.MonkeyPatch) -> None:
     )
     assert connector.wallet_dir == "/fake/wallet/dir"
     assert connector.wallet_password == "fake_password"
-    with unittest.mock.patch(target="helios.db.connector.oracledb.create_pool") as mock_create_pool:
+    with unittest.mock.patch(target="helios.db.oracle_connector.oracledb.create_pool") as mock_create_pool:
         connector._create_pool()
         mock_create_pool.assert_called_once_with(
             user="fake_user",
@@ -40,7 +40,7 @@ def test_connector_without_wallet(monkeypatch: pytest.MonkeyPatch) -> None:
     assert connector.wallet_dir is None
     assert connector.wallet_password is None
 
-    with unittest.mock.patch(target="helios.db.connector.oracledb.create_pool") as mock_create_pool:
+    with unittest.mock.patch(target="helios.db.oracle_connector.oracledb.create_pool") as mock_create_pool:
         connector._create_pool()
         mock_create_pool.assert_called_once_with(
             user="fake_user",

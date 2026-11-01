@@ -2,9 +2,9 @@ from unittest.mock import MagicMock
 import pytest
 
 from helios.db import DatabaseConnector
-from helios.elt.extraction.pipeline import Dataset, TemporalResolution
+from helios.elt.extraction.models import Dataset, TemporalResolution
 from helios.elt.load import StagingLoader, LoadStatus
-from helios.elt.load.mapper import LoadingMapperFactory
+from helios.elt.load.mappers import LoadingMapperFactory
 
 
 @pytest.fixture

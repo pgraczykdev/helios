@@ -1,28 +1,9 @@
-"""Pydantic prompts templates for the Helios agent."""
-from typing import Any, ClassVar
+"""Prompt builder functions for the Helios AI agent."""
+from typing import Any
 
-from pydantic import BaseModel, Field
-    
-class EnergyInsightReport(BaseModel):
-
-    SYSTEM_INSTRUCTION: ClassVar[str] = """
-        You are an energy transformation expert providing insights and analysis on the current trends and key drivers in the energy sector for Helios.
-        Your task is to generate comprehensive energy insight reports based on the latest data from the database.
-        RULES:
-        1. No hallucinations, base all insights on the latest data from the database.
-        2. Ensure clarity and conciseness in the report.
-        3. Use professional and neutral language.
-        4. Use English language for the report.
-    """ 
-
-    title: str = Field(..., description="Short, professional title of the energy insight report (max 100 characters)")
-    summary: str = Field(..., description="Concise summary of the energy insight report in 2-3 bullet points for Oracle APEX card element")
-    key_drivers: str = Field(..., description="List of 2-4 key drivers influencing the energy insight report")
-    renewable_trend: str = Field(..., description="Description of the current trend in renewable energy adoption: (Growth, Stable, or Decline)")
-    full_markdown_report: str = Field(..., description="Full energy insight report in markdown format")
 
 def build_country_insight_prompt(country_data: dict[str, Any]) -> str:
-    """Buduje ustrukturyzowany prompt analityczny dla modelu Gemini na podstawie wiersza danych z bazy."""
+    """Builds a structured prompt for the Helios AI agent based on country data."""
     entity_code = country_data.get("entity_code", "UNKNOWN")
     entity_name = country_data.get("entity_name", entity_code)
     year = country_data.get("year_num", "N/A")

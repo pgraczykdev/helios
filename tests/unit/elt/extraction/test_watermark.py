@@ -1,7 +1,7 @@
 from pathlib import Path
 import json
   
-from helios.elt.extraction.watermark import JsonWatermarkManager
+from helios.elt.extraction.json_watermark_manager import JsonWatermarkManager
 
 def test_save_and_get_watermark(tmp_path: Path) -> None:
     manager = JsonWatermarkManager(base_dir=tmp_path)

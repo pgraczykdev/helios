@@ -2,7 +2,7 @@ import os
 from dotenv import load_dotenv
 import pytest
 
-from helios.db.connector import OracleDatabaseConnector
+from helios.db import OracleDatabaseConnector
 from helios.elt.transform import OracleTransformer, TransformationStatus
 
 load_dotenv()

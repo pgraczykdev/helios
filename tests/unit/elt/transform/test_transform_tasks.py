@@ -1,8 +1,8 @@
 from unittest.mock import MagicMock, patch
 
-from helios.elt.load.loader import LoadStatus, LoadingResult
+from helios.elt.load.models import LoadStatus, LoadingResult
+from helios.elt.transform.models import TransformationResult, TransformationStatus
 from helios.elt.transform.tasks import transform_dwh_core
-from helios.elt.transform.transformer import TransformationResult, TransformationStatus
 
 
 def test_transform_dwh_core_success():

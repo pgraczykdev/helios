@@ -2,10 +2,8 @@
 import pytest
 from pydantic import ValidationError
 
-from helios.agent.prompts import (
-    EnergyInsightReport,
-    build_country_insight_prompt,
-)
+from helios.agent.models import EnergyInsightReport
+from helios.agent.prompts import build_country_insight_prompt
 
 
 def test_energy_insight_report_valid() -> None:

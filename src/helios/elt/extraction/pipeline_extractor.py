@@ -1,63 +1,34 @@
-from dataclasses import dataclass
 from datetime import datetime, timezone
-from enum import StrEnum
+import logging
 from pathlib import Path
 from typing import Any
-from dotenv import load_dotenv
-from helios.client.ember_client import EmberClient
-from helios.elt.extraction.lake import BronzeDataLake, JsonBronzeDataLake
-from helios.elt.extraction.watermark import WatermarkManager, JsonWatermarkManager
-from helios.elt.extraction.extraction_utils import normalize_date
 
-import logging
+from dotenv import load_dotenv
+
+from helios.client.ember_client import EmberClient
+from helios.elt.extraction.bronze_data_lake import BronzeDataLake
+from helios.elt.extraction.extraction_utils import normalize_date
+from helios.elt.extraction.json_bronze_data_lake import JsonBronzeDataLake
+from helios.elt.extraction.json_watermark_manager import JsonWatermarkManager
+from helios.elt.extraction.models.extraction_result import ExtractionResult
+from helios.elt.extraction.models.extraction_status import ExtractionStatus
+from helios.elt.extraction.models.temporal_resolution import TemporalResolution
+from helios.elt.extraction.watermark_manager import WatermarkManager
 
 load_dotenv()
 
 logger = logging.getLogger(__name__)
 
-class Dataset(StrEnum):
-    """Supported datasets for extraction."""
-    CARBON_INTENSITY = "carbon-intensity"
-    ELECTRICITY_DEMAND = "electricity-demand"
-    POWER_SECTOR_EMISSIONS = "power-sector-emissions"
-    ELECTRICITY_GENERATION = "electricity-generation" 
-    INSTALLED_CAPACITY = "installed-capacity"
-
-
-class TemporalResolution(StrEnum):
-    """Supported temporal resolutions for datasets."""
-    MONTHLY = "monthly"
-    YEARLY = "yearly"
-
-
-class ExtractionStatus(StrEnum):
-    """Outcome status of an extraction job."""
-    SUCCESS = "SUCCESS"
-    UP_TO_DATE = "UP_TO_DATE"
-    NO_DATA = "NO_DATA"
-    FAILED = "FAILED"
-
-
-@dataclass
-class ExtractionResult:
-    """Summary of the pipeline extraction run."""
-    dataset: str
-    temporal_resolution: str
-    status: ExtractionStatus
-    records_count: int = 0
-    previous_watermark: str | None = None
-    new_watermark: str | None = None
-    start_date: str | None = None
-    saved_file: str | None = None
-    error_message: str | None = None
-
 
 class PipelineExtractor:
     """Orchestrates watermark-aware data extraction from Ember API into Bronze Lake."""
-    def __init__(self, 
-                 client: EmberClient | None = None, 
-                 lake: BronzeDataLake | None = None,
-                 watermark_manager: WatermarkManager | None = None) -> None:
+
+    def __init__(
+        self,
+        client: EmberClient | None = None,
+        lake: BronzeDataLake | None = None,
+        watermark_manager: WatermarkManager | None = None,
+    ) -> None:
         """Initialize the extraction pipeline with optional client and lake dependencies."""
         self.client = client or EmberClient()
         self.lake = lake or JsonBronzeDataLake()
@@ -127,7 +98,7 @@ class PipelineExtractor:
                             temporal_resolution=temporal_resolution,
                             records_count=total_records,
                         )
-                        
+
                     logger.info(f"Batch [{year}] Saved {len(records)} records. Watermark -> {current_watermark}")
             except Exception as exc:
                 logger.exception(f"Batch [{year}] failed: {exc}")
@@ -141,7 +112,7 @@ class PipelineExtractor:
                     saved_file=last_saved,
                     error_message=str(exc),
                 )
-            
+
         if latest_available and total_records > 0:
             current_watermark = latest_available
             self.watermark_manager.set(
@@ -161,7 +132,6 @@ class PipelineExtractor:
             new_watermark=current_watermark,
             saved_file=last_saved,
         )
-    
 
     def run(
         self,
@@ -174,7 +144,10 @@ class PipelineExtractor:
             prev_watermark = self.watermark_manager.get(dataset=dataset, temporal_resolution=temporal_resolution)
             logger.info(f"Starting extraction for '{dataset}/{temporal_resolution}'. Current watermark: {prev_watermark}")
 
-            latest_available_date_raw = self.client.get_latest_available_date(dataset=dataset, temporal_resolution=temporal_resolution)
+            latest_available_date_raw = self.client.get_latest_available_date(
+                dataset=dataset,
+                temporal_resolution=temporal_resolution,
+            )
             latest_available = normalize_date(date_str=latest_available_date_raw) if latest_available_date_raw else None
             logger.info("Latest date reported by Ember API: %s", latest_available)
 
@@ -205,6 +178,3 @@ class PipelineExtractor:
                 new_watermark=prev_watermark,
                 error_message=str(exc),
             )
-
-    
-

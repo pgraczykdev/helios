@@ -1,5 +1,5 @@
 from pathlib import Path
-from helios.elt.extraction.lake import JsonBronzeDataLake     
+from helios.elt.extraction.json_bronze_data_lake import JsonBronzeDataLake     
 from unittest.mock import patch 
 import json
 
