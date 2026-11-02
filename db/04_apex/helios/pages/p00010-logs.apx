@@ -161,6 +161,9 @@ page 10 (
             sequence: 30
             slot: body
         }
+        settings {
+            includeShowAll: true
+        }
     )
 
     region ig_all_logs (
