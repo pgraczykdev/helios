@@ -220,8 +220,64 @@ page 1 (
         )
     )
 
+    region ai_insight (
+        name: Executive Insight
+        type: cards
+        source {
+            location: localDatabase
+            type: sqlQuery
+            pageItemsToSubmit: [
+                P0_COUNTRY
+                P0_YEAR
+            ]
+            sqlQuery:
+                ```sql
+            SELECT * FROM pkg_apex_queries.f_summary_ai_insight (
+                        p_country => :P0_COUNTRY,
+                        p_year    => :P0_YEAR
+            )
+                ```
+        }
+        layout {
+            sequence: 50
+            slot: body
+        }
+        appearance {
+            template: @/cards-container
+            templateOptions: [
+                #DEFAULT#
+            ]
+        }
+        card {
+            primaryKeyColumn1: INSIGHT_ID
+        }
+        title {
+            column: TITLE
+        }
+        subtitle {
+            column: SUMMARY_TEXT
+        }
+        body {
+            advancedFormatting: true
+            htmlExpression:
+                ```html
+                <div style="white-space: pre-line;">&FULL_CONTENT.</div>
+                ```
+        }
+        secondaryBody {
+            advancedFormatting: true
+            htmlExpression:
+                ```html
+                Model &MODEL_NAME. | Generated: &GENERATED_AT.
+                ```
+        }
+        messages {
+            whenNoDataFound: No insights available for the selected filters.
+        }
+    )
+
     dynamicAction da_filter_change (
-        name: Refresh on Filter Change
+        name: [Change] Refresh on Filter Change
         execution {
             sequence: 10
         }
@@ -263,6 +319,15 @@ page 1 (
                 sequence: 30
             }
         )
+        action refresh_ai_insight (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @ai_insight
+            }
+            execution {
+                sequence: 40
+            }
+        )
     )
-
 )

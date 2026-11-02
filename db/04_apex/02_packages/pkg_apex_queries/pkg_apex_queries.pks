@@ -45,6 +45,21 @@ CREATE OR REPLACE PACKAGE helios_apex.pkg_apex_queries AS
         p_lookback_years IN NUMBER   DEFAULT 9
     ) RETURN VARCHAR2 SQL_MACRO(TABLE);
 
+
+    /**
+     * Returns AI-generated insights for the Executive Dashboard.
+     *
+     * @param p_country ISO-3 country code (e.g. 'POL')
+     * @param p_year    Year number (e.g. 2023)
+     * @return SQL query text inlined at parse-time
+    
+    */
+    FUNCTION f_summary_ai_insight(
+        p_country IN VARCHAR2 DEFAULT NULL,
+        p_year    IN NUMBER   DEFAULT NULL
+    ) RETURN VARCHAR2 SQL_MACRO(TABLE);
+
+
     /**
      * Returns global country rankings by renewable energy share for the given year.
      * Includes dense ranking, entity name/code, renewables share (%), and generation volumes.
@@ -104,6 +119,7 @@ CREATE OR REPLACE PACKAGE helios_apex.pkg_apex_queries AS
      * @return SQL query text returning (d, r, lvl_order)
      */
     FUNCTION f_lov_logger_levels RETURN VARCHAR2 SQL_MACRO(TABLE);
+
 
 END pkg_apex_queries;
 /

@@ -127,6 +127,36 @@ CREATE OR REPLACE PACKAGE BODY helios_apex.pkg_apex_queries AS
         ]';
     END f_summary_generation_history;
 
+    FUNCTION f_summary_ai_insight(
+        p_country IN VARCHAR2 DEFAULT NULL,
+        p_year    IN NUMBER   DEFAULT NULL
+    ) RETURN VARCHAR2 SQL_MACRO(TABLE) IS
+    BEGIN
+        RETURN q'[
+            SELECT
+                i.insight_id,
+                i.entity_id,
+                i.entity_code,
+                i.entity_name,
+                i.period_year,
+                i.insight_type,
+                i.title,
+                i.summary_text,
+                i.full_content,
+                i.model_name,
+                i.prompt_tokens,
+                i.completion_tokens,
+                TO_CHAR(i.created_at, 'YYYY-MM-DD HH24:MI') AS generated_at,
+                i.is_latest
+            FROM v_ai_insights_overview i
+            WHERE 1 = 1 
+              AND i.entity_code = NVL(p_country, 'POL')
+              AND i.period_year = NVL(p_year, 2023)
+              AND i.is_latest = 'Y'
+              AND i.insight_type = 'COUNTRY_SUMMARY'
+        ]';
+    END f_summary_ai_insight;
+
     FUNCTION f_global_renewables_ranking(
         p_year IN NUMBER DEFAULT NULL
     ) RETURN VARCHAR2 SQL_MACRO(TABLE) IS
