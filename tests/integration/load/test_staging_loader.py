@@ -3,7 +3,7 @@ from typing import Any
 from dotenv import load_dotenv
 import pytest
 
-from helios.db import OracleDatabaseConnector
+from helios.db import DatabaseConnectorFactory, DatabaseSchema
 from helios.elt.extraction.models import Dataset, TemporalResolution
 from helios.elt.load import LoadStatus, StagingLoader
 
@@ -157,10 +157,7 @@ def test_staging_loader_integration(
     sample_data: list[dict[str, Any]],
 ) -> None:
     """Verify idempotent batch loading of all 5 datasets into Oracle STG_EMBER_* tables."""
-    connector = OracleDatabaseConnector(
-        user=stg_user,
-        password=stg_password,
-    )
+    connector = DatabaseConnectorFactory.create_connector(database_schema=DatabaseSchema.STAGING)
     loader = StagingLoader(database_connector=connector)
     test_source_file = f"test_integration_{dataset}_sample.json"
 

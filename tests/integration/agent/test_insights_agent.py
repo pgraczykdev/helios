@@ -5,7 +5,7 @@ import pytest
 
 from helios.agent.insights_agent import InsightsAgent
 from helios.agent.models import EnergyInsightReport
-from helios.db import OracleDatabaseConnector
+from helios.db import DatabaseConnectorFactory, DatabaseSchema
 
 load_dotenv()
 
@@ -23,53 +23,49 @@ pytestmark = pytest.mark.skipif(
 
 def test_insights_agent_live_generation() -> None:
     """Live test: generate real AI report for Poland 2023 and persist in Oracle ADW."""
-    connector = OracleDatabaseConnector(
-        user=db_core_user,
-        password=db_core_password,
-        dsn=oracle_dsn,
-        wallet_dir=os.getenv("ORACLE_WALLET_DIR"),
-        wallet_password=os.getenv("ORACLE_WALLET_PASSWORD"),
-    )
-
+    connector = DatabaseConnectorFactory.create_connector(database_schema=DatabaseSchema.CORE)
     agent = InsightsAgent(connector=connector)
 
-    report = agent.generate_and_save_country_insight(
-        entity_code="POL",
-        year=2023,
-    )
+    try:
+        report = agent.generate_and_save_country_insight(
+            entity_code="POL",
+            year=2023,
+        )
 
-    # 1. Verification of the returned Pydantic object (EnergyInsightReport)
-    assert isinstance(report, EnergyInsightReport)
-    assert report.title
-    assert report.summary
-    assert report.full_markdown_report
-    assert report.renewable_trend in ("Growth", "Stable", "Decline")
+        # 1. Verification of the returned Pydantic object (EnergyInsightReport)
+        assert isinstance(report, EnergyInsightReport)
+        assert report.title
+        assert report.summary
+        assert report.full_markdown_report
+        assert report.renewable_trend in ("Growth", "Stable", "Decline")
 
-    # 2. Verification of the record in the database through the SmartDB analytical view
-    with connector.acquire_connection() as conn:
-        with conn.cursor() as cursor:
-            sql = """
-                SELECT 
-                    insight_id,
-                    entity_code,
-                    period_year,
-                    title,
-                    summary_text,
-                    is_latest,
-                    prompt_tokens,
-                    completion_tokens
-                FROM helios_core.v_ai_insights_overview
-                WHERE entity_code = 'POL'
-                  AND period_year = 2023
-                  AND is_latest = 'Y'
-            """
-            cursor.execute(sql)
-            row = cursor.fetchone()
+        # 2. Verification of the record in the database through the SmartDB analytical view
+        with connector.acquire_connection() as conn:
+            with conn.cursor() as cursor:
+                sql = """
+                    SELECT 
+                        insight_id,
+                        entity_code,
+                        period_year,
+                        title,
+                        summary_text,
+                        is_latest,
+                        prompt_tokens,
+                        completion_tokens
+                    FROM helios_core.v_ai_insights_overview
+                    WHERE entity_code = 'POL'
+                      AND period_year = 2023
+                      AND is_latest = 'Y'
+                """
+                cursor.execute(sql)
+                row = cursor.fetchone()
 
-            assert row is not None
-            assert row[1] == "POL"
-            assert row[2] == 2023
-            assert row[3] == report.title
-            assert row[5] == "Y"
-            assert row[6] is not None and row[6] > 0  # prompt_tokens
-            assert row[7] is not None and row[7] > 0  # completion_tokens
+                assert row is not None
+                assert row[1] == "POL"
+                assert row[2] == 2023
+                assert row[3] == report.title
+                assert row[5] == "Y"
+                assert row[6] is not None and row[6] > 0  # prompt_tokens
+                assert row[7] is not None and row[7] > 0  # completion_tokens
+    finally:
+        connector.close_pool()

@@ -13,9 +13,6 @@ x-airflow-common: &airflow-common
     AIRFLOW__API__AUTH_BACKENDS: 'airflow.api.auth.backend.basic_auth,airflow.api.auth.backend.session'
     AIRFLOW__CORE__ALLOWED_DESERIALIZATION_CLASSES: 'helios.*'
     PYTHONPATH: /opt/airflow/src
-    # Aliases ensuring compatibility with existing code
-    HELIOS_STG_USER: ${HELIOS_STAGING_USER:-HELIOS_STG}
-    HELIOS_STG_PASSWORD: ${HELIOS_STAGING_PASSWORD:-}
     # Container-specific path to the Oracle Wallet directory
     ORACLE_WALLET_DIR: ${ORACLE_WALLET_DIR:-}
   volumes:

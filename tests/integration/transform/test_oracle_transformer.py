@@ -2,7 +2,7 @@ import os
 from dotenv import load_dotenv
 import pytest
 
-from helios.db import OracleDatabaseConnector
+from helios.db import DatabaseConnectorFactory, DatabaseSchema
 from helios.elt.transform import OracleTransformer, TransformationStatus
 
 load_dotenv()
@@ -17,20 +17,16 @@ pytestmark = pytest.mark.skipif(not db_configured, reason="Oracle CORE DB creden
 
 def test_oracle_transformer_integration() -> None:
     """Live integration test: execute PKG_EMBER_ELT.f_load_all on Oracle ADW."""
-    connector = OracleDatabaseConnector(
-        user=db_core_user,
-        password=db_core_password,
-        dsn=oracle_dsn,
-        wallet_dir=os.getenv("ORACLE_WALLET_DIR"),
-        wallet_password=os.getenv("ORACLE_WALLET_PASSWORD"),
-    )
-
+    connector = DatabaseConnectorFactory.create_connector(database_schema=DatabaseSchema.CORE)
     transformer = OracleTransformer(connector=connector)
 
-    result = transformer.transform(commit=True)
+    try:
+        result = transformer.transform(commit=True)
 
-    assert result.status in (TransformationStatus.SUCCESS, TransformationStatus.WARNING)
-    assert isinstance(result.rows_processed, int)
-    assert isinstance(result.rows_merged, int)
-    assert isinstance(result.execution_seconds, (int, float))
-    assert result.execution_seconds >= 0.0
+        assert result.status in (TransformationStatus.SUCCESS, TransformationStatus.WARNING)
+        assert isinstance(result.rows_processed, int)
+        assert isinstance(result.rows_merged, int)
+        assert isinstance(result.execution_seconds, (int, float))
+        assert result.execution_seconds >= 0.0
+    finally:
+        connector.close_pool()
