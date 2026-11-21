@@ -1,9 +1,8 @@
 """DAG Tasks for generating insights using the Helios AI agent."""
-import os
-from helios.db import DatabaseConnector, OracleDatabaseConnector
-from helios.elt.transform.models import TransformationResult, TransformationStatus
-from helios.agent.models import InsightGenerationResult, InsightGenerationStatus
 from helios.agent import InsightsAgent
+from helios.agent.models import InsightGenerationResult, InsightGenerationStatus
+from helios.db import DatabaseConnector, DatabaseConnectorFactory, DatabaseSchema
+from helios.elt.transform.models import TransformationResult, TransformationStatus
 
 
 
@@ -31,9 +30,7 @@ def generate_insights(insights_agent: InsightsAgent | None = None,
     connector: DatabaseConnector | None = None
 
     if insights_agent is None:
-        user = os.getenv("HELIOS_CORE_USER")
-        password = os.getenv("HELIOS_CORE_PASSWORD")
-        connector = OracleDatabaseConnector(user=user, password=password)
+        connector = DatabaseConnectorFactory.create_connector(database_schema=DatabaseSchema.CORE)
         insights_agent = InsightsAgent(connector=connector)
 
     try:

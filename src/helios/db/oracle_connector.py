@@ -14,6 +14,9 @@ logger = logging.getLogger(__name__)
 class OracleDatabaseConnector:
     """Oracle database connection pool manager supporting both mTLS Wallet and TCP."""
 
+    def get_user(self) -> str | None:
+        return self.user
+
     def __init__(
         self,
         user: str | None = None,

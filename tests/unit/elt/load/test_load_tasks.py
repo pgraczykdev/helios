@@ -1,7 +1,7 @@
 import json
-from pathlib import Path
 from unittest.mock import MagicMock, patch
 
+from helios.db import DatabaseSchema
 from helios.elt.extraction.models import Dataset, TemporalResolution
 from helios.elt.load.models import LoadStatus, LoadingResult
 from helios.elt.load.tasks import (
@@ -40,8 +40,11 @@ def test_load_dataset_to_staging_success(tmp_path):
     sample_file.write_text(json.dumps([{"entity": "Poland", "date": "2023"}]), encoding="utf-8")
 
     with patch("helios.elt.load.tasks.JsonBronzeDataLake") as mock_lake_cls, \
-         patch("helios.elt.load.tasks.OracleDatabaseConnector") as mock_conn_cls, \
+         patch("helios.elt.load.tasks.DatabaseConnectorFactory.create_connector") as mock_create_conn, \
          patch("helios.elt.load.tasks.StagingLoader") as mock_loader_cls:
+
+        mock_conn = MagicMock()
+        mock_create_conn.return_value = mock_conn
 
         mock_lake = MagicMock()
         mock_lake.get_dataset_prefix.return_value = data_dir.as_posix()
@@ -68,6 +71,8 @@ def test_load_dataset_to_staging_success(tmp_path):
         assert result.rows_loaded == 1
         assert result.target_table == "stg_ember_generation"
         assert result.source_file == "gen_2023.json"
+        mock_create_conn.assert_called_once_with(database_schema=DatabaseSchema.STAGING)
+        mock_conn.close_pool.assert_called_once()
 
 
 def test_dedicated_load_functions():

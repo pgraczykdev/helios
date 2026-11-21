@@ -1,9 +1,8 @@
 import json
 import logging
-import os
 from pathlib import Path
 
-from helios.db.oracle_connector import OracleDatabaseConnector
+from helios.db import DatabaseConnectorFactory, DatabaseSchema
 from helios.elt.extraction.json_bronze_data_lake import JsonBronzeDataLake
 from helios.elt.extraction.models.dataset import Dataset
 from helios.elt.extraction.models.temporal_resolution import TemporalResolution
@@ -49,13 +48,7 @@ def load_dataset_to_staging(
             status=LoadStatus.SKIPPED,
         )
 
-    connector = OracleDatabaseConnector(
-        user=os.getenv("HELIOS_STG_USER"),
-        password=os.getenv("HELIOS_STG_PASSWORD"),
-        dsn=os.getenv("ORACLE_DSN"),
-        wallet_dir=os.getenv("ORACLE_WALLET_DIR"),
-        wallet_password=os.getenv("ORACLE_WALLET_PASSWORD"),
-    )
+    connector = DatabaseConnectorFactory.create_connector(database_schema=DatabaseSchema.STAGING)
     loader = StagingLoader(database_connector=connector)
     total_loaded = 0
 

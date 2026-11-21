@@ -1,5 +1,6 @@
 from unittest.mock import MagicMock, patch
 
+from helios.db import DatabaseSchema
 from helios.elt.load.models import LoadStatus, LoadingResult
 from helios.elt.transform.models import TransformationResult, TransformationStatus
 from helios.elt.transform.tasks import transform_dwh_core
@@ -7,11 +8,11 @@ from helios.elt.transform.tasks import transform_dwh_core
 
 def test_transform_dwh_core_success():
     """Verify transform_dwh_core executes OracleTransformer and returns TransformationResult."""
-    with patch("helios.elt.transform.tasks.OracleDatabaseConnector") as mock_conn_cls, \
+    with patch("helios.elt.transform.tasks.DatabaseConnectorFactory.create_connector") as mock_create_conn, \
          patch("helios.elt.transform.tasks.OracleTransformer") as mock_tf_cls:
 
         mock_conn = MagicMock()
-        mock_conn_cls.return_value = mock_conn
+        mock_create_conn.return_value = mock_conn
 
         mock_transformer = MagicMock()
         mock_transformer.transform.return_value = TransformationResult(
@@ -35,4 +36,5 @@ def test_transform_dwh_core_success():
         assert result.rows_merged == 100
         assert result.execution_seconds == 1.23
         assert result.error_message is None
+        mock_create_conn.assert_called_once_with(database_schema=DatabaseSchema.CORE)
         mock_conn.close_pool.assert_called_once()

@@ -1,7 +1,6 @@
 import logging
-import os
 
-from helios.db.oracle_connector import OracleDatabaseConnector
+from helios.db import DatabaseConnectorFactory, DatabaseSchema
 from helios.elt.load.models.loading_result import LoadingResult
 from helios.elt.transform.models.transformation_result import TransformationResult
 from helios.elt.transform.oracle_transformer import OracleTransformer
@@ -16,16 +15,12 @@ def transform_dwh_core(load_results: list[LoadingResult] | None = None) -> Trans
         loaded_summary = [(r.target_table, r.rows_loaded, str(r.status)) for r in valid_results]
         logger.info("Executing DWH transformation after staging loads: %s", loaded_summary)
 
-    connector = OracleDatabaseConnector(
-        user=os.getenv("HELIOS_CORE_USER"),
-        password=os.getenv("HELIOS_CORE_PASSWORD"),
-        dsn=os.getenv("ORACLE_DSN"),
-        wallet_dir=os.getenv("ORACLE_WALLET_DIR"),
-        wallet_password=os.getenv("ORACLE_WALLET_PASSWORD"),
-    )
+    connector = DatabaseConnectorFactory.create_connector(database_schema=DatabaseSchema.CORE)
     transformer = OracleTransformer(connector=connector)
-    result = transformer.transform(commit=True)
-    connector.close_pool()
+    try:
+        result = transformer.transform(commit=True)
+    finally:
+        connector.close_pool()
 
     logger.info(
         "Transformation finished: status=%s, processed=%d, merged=%d, duration=%.2fs",

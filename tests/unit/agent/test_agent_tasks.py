@@ -1,21 +1,19 @@
 """Unit tests for Helios AI agent DAG tasks."""
+from unittest.mock import MagicMock, patch
+
 import pytest
-from unittest.mock import MagicMock
-from helios.agent.insights_agent import InsightsAgent
-from helios.db import OracleDatabaseConnector
-from helios.elt.transform.models import TransformationResult, TransformationStatus
-from helios.agent.insights_agent import DEFAULT_MAX_RETRIES, DEFAULT_INITIAL_BACKOFF_SECONDS
-from helios.agent.models import InsightGenerationResult, InsightGenerationStatus
+
+from helios.agent.insights_agent import DEFAULT_INITIAL_BACKOFF_SECONDS, DEFAULT_MAX_RETRIES, InsightsAgent
+from helios.agent.models import InsightGenerationStatus
 from helios.agent.tasks import generate_insights
+from helios.db import DatabaseConnector, DatabaseSchema
+from helios.elt.transform.models import TransformationResult, TransformationStatus
 
 
 @pytest.fixture
 def mock_agent() -> InsightsAgent:
     """Fixture that provides a mock InsightsAgent."""
-
-    connector = MagicMock(
-        spec=OracleDatabaseConnector
-    )
+    connector = MagicMock(spec=DatabaseConnector)
 
     return MagicMock(
         connector=connector,
@@ -82,3 +80,22 @@ def test_generate_insights_transformation_error() -> None:
     assert result.year == 2024
     assert result.countries_processed == 0
     assert result.countries_failed == 0
+
+
+def test_generate_insights_creates_connector_via_factory_and_closes_pool() -> None:
+    """Verify generate_insights acquires CORE connector from factory and closes its pool."""
+    with patch("helios.agent.tasks.DatabaseConnectorFactory.create_connector") as mock_create_conn, \
+         patch("helios.agent.tasks.InsightsAgent") as mock_agent_cls:
+        mock_conn = MagicMock(spec=DatabaseConnector)
+        mock_create_conn.return_value = mock_conn
+        mock_agent_instance = MagicMock()
+        mock_agent_cls.return_value = mock_agent_instance
+
+        result = generate_insights(entity_codes=["POL"], year=2023)
+
+        assert result.status == InsightGenerationStatus.SUCCESS
+        assert result.countries_processed == 1
+        mock_create_conn.assert_called_once_with(database_schema=DatabaseSchema.CORE)
+        mock_agent_cls.assert_called_once_with(connector=mock_conn)
+        mock_conn.close_pool.assert_called_once()
+
