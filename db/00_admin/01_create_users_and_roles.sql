@@ -2,31 +2,16 @@ DECLARE
     l_tablespace VARCHAR2(30 CHAR);
 
     PROCEDURE p_ensure_user (
-        pi_username VARCHAR2,
-        pi_password VARCHAR2,
+        pi_username   VARCHAR2,
+        pi_password   VARCHAR2,
         pi_tablespace VARCHAR2
     )
     AS
-        l_user_exists SIMPLE_INTEGER := 0;
     BEGIN
-        SELECT 
-            CASE WHEN EXISTS(
-                SELECT 1 FROM dba_users WHERE username = UPPER(pi_username)
-            ) THEN 1 ELSE 0 END
-        INTO l_user_exists
-        FROM dual;
-
-        IF l_user_exists = 0 THEN
-            EXECUTE IMMEDIATE 'CREATE USER ' || pi_username
-                               || ' IDENTIFIED BY "' || pi_password || '"'
-                               || ' DEFAULT TABLESPACE ' || pi_tablespace
-                               || ' QUOTA UNLIMITED ON ' || pi_tablespace;
-        ELSE
-            EXECUTE IMMEDIATE 'ALTER USER ' || pi_username
-                            || ' IDENTIFIED BY "' || pi_password || '"'
-                            || ' DEFAULT TABLESPACE ' || pi_tablespace
-                            || ' QUOTA UNLIMITED ON ' || pi_tablespace;
-        END IF;
+        EXECUTE IMMEDIATE 'CREATE USER IF NOT EXISTS ' || pi_username
+                           || ' IDENTIFIED BY "' || pi_password || '"'
+                           || ' DEFAULT TABLESPACE ' || pi_tablespace
+                           || ' QUOTA UNLIMITED ON ' || pi_tablespace;
     END p_ensure_user;
 
 BEGIN
